@@ -2,15 +2,37 @@
 
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const { data: characters, isLoading } = api.character.getByUserId.useQuery(
+  const { data: characters, isLoading, refetch } = api.character.getByUserId.useQuery(
     undefined,
     { enabled: !!session }
   );
+
+  const deleteCharacter = api.character.delete.useMutation({
+    onSuccess: () => {
+      void refetch();
+    },
+  });
+
+  const handleDeleteCharacter = (characterId: string) => {
+    deleteCharacter.mutate({ id: characterId });
+  };
 
   if (status === "loading") {
     return (
@@ -123,9 +145,46 @@ export default function Home() {
                           </p>
                         )}
                       </div>
-                      <span className="bg-sky-500 text-white text-xs px-2 py-1 rounded">
-                        Level {character.level}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-sky-500 text-white text-xs px-2 py-1 rounded">
+                          Level {character.level}
+                        </span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-950"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-slate-800 border-slate-700">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-white">
+                                Delete Character
+                              </AlertDialogTitle>
+                              <AlertDialogDescription className="text-slate-400">
+                                Are you sure you want to delete &quot;{character.name}&quot;? This
+                                action cannot be undone and will remove the character from
+                                any games they&apos;re currently in.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600">
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteCharacter(character.id)}
+                                disabled={deleteCharacter.isPending}
+                                className="bg-red-600 text-white hover:bg-red-700"
+                              >
+                                {deleteCharacter.isPending ? "Deleting..." : "Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     
                     <div className="space-y-2 mb-4">
@@ -175,8 +234,18 @@ export default function Home() {
                       </div>
                     )}
 
-                    <div className="text-xs text-slate-500">
-                      Created {new Date(character.createdAt).toLocaleDateString()}
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-slate-500">
+                        Created {new Date(character.createdAt).toLocaleDateString()}
+                      </div>
+                      <Link href={`/character/${character.id}`}>
+                        <Button 
+                          size="sm" 
+                          className="bg-sky-500 text-white hover:bg-sky-600"
+                        >
+                          View Details
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 ))}

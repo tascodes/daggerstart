@@ -23,6 +23,9 @@ import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import Link from "next/link";
 import { Crown, Users, UserMinus, UserPlus } from "lucide-react";
+import Image from "next/image";
+import DiceRoller from "~/components/DiceRoller";
+import DiceRollFeed from "~/components/DiceRollFeed";
 
 interface GameDetailClientProps {
   gameId: string;
@@ -35,10 +38,9 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const { data: game, refetch } = api.game.getById.useQuery({ id: gameId });
 
-  const { data: availableData } = api.game.getAvailableCharacters.useQuery(
-    { gameId },
-    { enabled: joinDialogOpen }
-  );
+  const { data: availableData } = api.game.getAvailableCharacters.useQuery({
+    gameId,
+  });
 
   const addCharacterToGame = api.game.addCharacterToGame.useMutation({
     onSuccess: () => {
@@ -56,7 +58,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const handleJoinGame = () => {
     if (!selectedCharacterId) return;
-    
+
     addCharacterToGame.mutate({
       gameId,
       characterId: selectedCharacterId,
@@ -69,9 +71,9 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   if (!game) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Game not found</h1>
+          <h1 className="mb-4 text-2xl font-bold text-white">Game not found</h1>
           <Link href="/game">
             <Button className="bg-sky-500 text-white hover:bg-sky-600">
               Back to Games
@@ -83,20 +85,21 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
   }
 
   const isGameMaster = game.gameMaster.id === session?.user.id;
-  const canJoinGame = availableData?.canAddCharacter && availableData.characters.length > 0;
+  const canJoinGame =
+    availableData?.canAddCharacter && availableData.characters.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-900 py-8">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="mb-2 flex items-center gap-3">
               <h1 className="text-4xl font-bold text-white">{game.name}</h1>
-              {isGameMaster && <Crown className="w-8 h-8 text-yellow-500" />}
+              {isGameMaster && <Crown className="h-8 w-8 text-yellow-500" />}
             </div>
             {game.description && (
-              <p className="text-slate-400 text-lg">{game.description}</p>
+              <p className="text-lg text-slate-400">{game.description}</p>
             )}
           </div>
           <div className="flex items-center gap-4">
@@ -112,15 +115,19 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-sky-500 text-white hover:bg-yellow-600">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Join Game
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {isGameMaster ? "Add Character" : "Join Game"}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700">
+                <DialogContent className="border-slate-700 bg-slate-800">
                   <DialogHeader>
-                    <DialogTitle className="text-white">Join Game</DialogTitle>
+                    <DialogTitle className="text-white">
+                      {isGameMaster ? "Add Character" : "Join Game"}
+                    </DialogTitle>
                     <DialogDescription className="text-slate-400">
-                      Select a character to add to this game.
+                      {isGameMaster
+                        ? "Select a character to add to your game."
+                        : "Select a character to add to this game."}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -162,10 +169,18 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                     <Button
                       type="button"
                       onClick={handleJoinGame}
-                      disabled={!selectedCharacterId || addCharacterToGame.isPending}
+                      disabled={
+                        !selectedCharacterId || addCharacterToGame.isPending
+                      }
                       className="bg-sky-500 text-white hover:bg-sky-600"
                     >
-                      {addCharacterToGame.isPending ? "Joining..." : "Join Game"}
+                      {addCharacterToGame.isPending
+                        ? isGameMaster
+                          ? "Adding..."
+                          : "Joining..."
+                        : isGameMaster
+                          ? "Add Character"
+                          : "Join Game"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -174,39 +189,41 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Game Master Section */}
           <div className="lg:col-span-1">
-            <div className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700">
-              <div className="flex items-center gap-2 mb-4">
-                <Crown className="w-5 h-5 text-yellow-500" />
+            <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+              <div className="mb-4 flex items-center gap-2">
+                <Crown className="h-5 w-5 text-yellow-500" />
                 <h2 className="text-xl font-bold text-white">Game Master</h2>
               </div>
               <div className="flex items-center gap-3">
                 {game.gameMaster.image && (
-                  <img
+                  <Image
                     src={game.gameMaster.image}
                     alt={game.gameMaster.name ?? ""}
-                    className="w-12 h-12 rounded-full"
+                    height={48}
+                    width={48}
+                    className="h-12 w-12 rounded-full"
                   />
                 )}
                 <div>
-                  <p className="text-white font-medium">
+                  <p className="font-medium text-white">
                     {game.gameMaster.name}
                     {isGameMaster && " (You)"}
                   </p>
-                  <p className="text-slate-400 text-sm">Game Master</p>
+                  <p className="text-sm text-slate-400">Game Master</p>
                 </div>
               </div>
             </div>
 
             {/* Game Info */}
-            <div className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700 mt-6">
-              <h3 className="text-lg font-bold text-white mb-4">Game Info</h3>
+            <div className="mt-6 rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+              <h3 className="mb-4 text-lg font-bold text-white">Game Info</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Users className="w-4 h-4" />
+                  <span className="flex items-center gap-1 text-slate-400">
+                    <Users className="h-4 w-4" />
                     Characters:
                   </span>
                   <span className="text-white">{game._count.characters}</span>
@@ -223,65 +240,74 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
           {/* Characters Section */}
           <div className="lg:col-span-2">
-            <div className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700">
-              <div className="flex items-center justify-between mb-6">
+            <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+              <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">Characters</h2>
-                <span className="text-slate-400 text-sm">
+                <span className="text-sm text-slate-400">
                   {game.characters.length} character(s) in this game
                 </span>
               </div>
 
               {game.characters.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-slate-400 mb-4">
+                <div className="py-8 text-center">
+                  <p className="mb-4 text-slate-400">
                     No characters have joined this game yet.
                   </p>
                   {canJoinGame && (
-                    <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                    <Dialog
+                      open={joinDialogOpen}
+                      onOpenChange={setJoinDialogOpen}
+                    >
                       <DialogTrigger asChild>
                         <Button className="bg-sky-500 text-white hover:bg-yellow-600">
-                          Be the First to Join!
+                          {isGameMaster
+                            ? "Add Your First Character!"
+                            : "Be the First to Join!"}
                         </Button>
                       </DialogTrigger>
                     </Dialog>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {game.characters.map((character) => {
-                    const isUserCharacter = character.user.id === session?.user.id;
-                    
+                    const isUserCharacter =
+                      character.user.id === session?.user.id;
+
                     return (
                       <div
                         key={character.id}
-                        className={`bg-slate-700 rounded-lg p-4 border ${
+                        className={`rounded-lg border bg-slate-700 p-4 ${
                           isUserCharacter
                             ? "border-sky-500"
                             : "border-slate-600"
                         }`}
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="mb-3 flex items-start justify-between">
                           <div>
-                            <h3 className="text-lg font-bold text-white mb-1">
+                            <Link 
+                              href={`/character/${character.id}`}
+                              className="mb-1 text-lg font-bold text-white hover:text-sky-400 transition-colors"
+                            >
                               {character.name}
-                              {isUserCharacter && (
-                                <span className="text-sky-400 text-sm ml-2">
-                                  (Your Character)
-                                </span>
-                              )}
-                            </h3>
+                            </Link>
+                            {isUserCharacter && (
+                              <span className="ml-2 text-sm text-sky-400">
+                                (Your Character)
+                              </span>
+                            )}
                             {character.pronouns && (
                               <p className="text-sm text-slate-400">
                                 {character.pronouns}
                               </p>
                             )}
                           </div>
-                          <span className="bg-sky-500 text-white text-xs px-2 py-1 rounded">
+                          <span className="rounded bg-sky-500 px-2 py-1 text-xs text-white">
                             Level {character.level}
                           </span>
                         </div>
 
-                        <div className="space-y-1 mb-3">
+                        <div className="mb-3 space-y-1">
                           <div className="flex justify-between text-sm">
                             <span className="text-slate-400">Class:</span>
                             <span className="text-white capitalize">
@@ -296,16 +322,18 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-600">
+                        <div className="flex items-center justify-between border-t border-slate-600 pt-3">
                           <div className="flex items-center gap-2">
                             {character.user.image && (
-                              <img
+                              <Image
                                 src={character.user.image}
                                 alt={character.user.name ?? ""}
-                                className="w-6 h-6 rounded-full"
+                                width={24}
+                                height={24}
+                                className="h-6 w-6 rounded-full"
                               />
                             )}
-                            <span className="text-slate-400 text-sm">
+                            <span className="text-sm text-slate-400">
                               {character.user.name}
                             </span>
                           </div>
@@ -317,7 +345,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                               disabled={removeCharacterFromGame.isPending}
                               className="border-red-600 text-red-400 hover:bg-red-950 hover:text-red-300"
                             >
-                              <UserMinus className="w-4 h-4 mr-1" />
+                              <UserMinus className="mr-1 h-4 w-4" />
                               Leave
                             </Button>
                           )}
@@ -328,6 +356,37 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Dice Rolling Section */}
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+          {/* Dice Roller */}
+          <div>
+            {session && (
+              <DiceRoller
+                gameId={gameId}
+                characterId={
+                  game.characters.find(
+                    (char) => char.user.id === session.user.id,
+                  )?.id
+                }
+                characterName={
+                  game.characters.find(
+                    (char) => char.user.id === session.user.id,
+                  )?.name
+                }
+              />
+            )}
+          </div>
+
+          {/* Dice Roll Feed */}
+          <div>
+            <DiceRollFeed
+              gameId={gameId}
+              isGameMaster={isGameMaster}
+              limit={15}
+            />
           </div>
         </div>
       </div>

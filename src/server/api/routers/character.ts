@@ -52,4 +52,65 @@ export const characterRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
   }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        include: {
+          user: {
+            select: { id: true, name: true, image: true },
+          },
+          game: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Allow viewing if user owns the character OR is in the same game
+      const canView = 
+        character.userId === ctx.session.user.id ||
+        (character.game && await ctx.db.game.findFirst({
+          where: {
+            id: character.game.id,
+            OR: [
+              { gameMasterId: ctx.session.user.id },
+              { characters: { some: { userId: ctx.session.user.id } } },
+            ],
+          },
+        }));
+
+      if (!canView) {
+        throw new Error("You don't have permission to view this character");
+      }
+
+      return character;
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true, name: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only delete your own characters");
+      }
+
+      return ctx.db.character.delete({
+        where: { id: input.id },
+      });
+    }),
 });
