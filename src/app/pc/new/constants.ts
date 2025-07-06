@@ -20,6 +20,19 @@ export const Heritage = {
 } as const;
 export type HeritageKeys = (typeof Heritage)[keyof typeof Heritage];
 
+export const Community = {
+  highborne: "highborne",
+  loreborne: "loreborne",
+  orderborne: "orderborne",
+  ridgeborne: "ridgeborne",
+  seaborne: "seaborne",
+  slyborne: "slyborne",
+  underborne: "underborne",
+  wanderborne: "wanderborne",
+  wildborne: "wildborne",
+} as const;
+export type CommunityKeys = (typeof Community)[keyof typeof Community];
+
 export const Class = {
   bard: "bard",
   druid: "druid",

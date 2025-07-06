@@ -1,69 +1,190 @@
+"use client";
+
+import { signIn, signOut, useSession } from "next-auth/react";
+import { Button } from "~/components/ui/button";
+import { api } from "~/trpc/react";
 import Link from "next/link";
 
-import { LatestPost } from "~/app/_components/post";
-import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+export default function Home() {
+  const { data: session, status } = useSession();
+  const { data: characters, isLoading } = api.character.getByUserId.useQuery(
+    undefined,
+    { enabled: !!session }
+  );
 
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await auth();
-
-  if (session?.user) {
-    void api.post.getLatest.prefetch();
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
-
-            <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-white">
-                {session && <span>Logged in as {session.user?.name}</span>}
-              </p>
-              <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
+    <div className="min-h-screen bg-slate-900 py-8">
+      <div className="mx-auto max-w-6xl px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold text-white">My Characters</h1>
+          <div className="flex items-center gap-4">
+            {session ? (
+              <>
+                <span className="text-slate-300">
+                  Welcome, {session.user?.name}
+                </span>
+                <Button
+                  onClick={() => signOut()}
+                  variant="outline"
+                  className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => signIn("discord")}
+                className="bg-sky-500 text-white hover:bg-sky-600"
               >
-                {session ? "Sign out" : "Sign in"}
+                Sign In with Discord
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        {!session ? (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Welcome to Character Creator
+            </h2>
+            <p className="text-slate-400 mb-8">
+              Sign in to create and manage your characters.
+            </p>
+            <Button
+              onClick={() => signIn("discord")}
+              className="bg-sky-500 text-white hover:bg-sky-600"
+            >
+              Get Started
+            </Button>
+          </div>
+        ) : (
+          <>
+            {/* Action Buttons */}
+            <div className="mb-8 flex items-center gap-4">
+              <Link href="/pc/new">
+                <Button className="bg-sky-500 text-white hover:bg-yellow-600">
+                  Create New Character
+                </Button>
+              </Link>
+              <Link href="/game">
+                <Button
+                  variant="outline"
+                  className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
+                >
+                  View Games
+                </Button>
               </Link>
             </div>
-          </div>
 
-          {session?.user && <LatestPost />}
-        </div>
-      </main>
-    </HydrateClient>
+            {/* Characters Grid */}
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="text-white">Loading your characters...</div>
+              </div>
+            ) : characters?.length === 0 ? (
+              <div className="text-center py-16">
+                <h3 className="text-xl font-semibold text-white mb-4">
+                  No characters yet
+                </h3>
+                <p className="text-slate-400 mb-8">
+                  Create your first character to get started on your adventure!
+                </p>
+                <Link href="/pc/new">
+                  <Button className="bg-sky-500 text-white hover:bg-yellow-600">
+                    Create Your First Character
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {characters?.map((character) => (
+                  <div
+                    key={character.id}
+                    className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700 hover:border-slate-600 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-white mb-1">
+                          {character.name}
+                        </h3>
+                        {character.pronouns && (
+                          <p className="text-sm text-slate-400">
+                            {character.pronouns}
+                          </p>
+                        )}
+                      </div>
+                      <span className="bg-sky-500 text-white text-xs px-2 py-1 rounded">
+                        Level {character.level}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Class:</span>
+                        <span className="text-white capitalize">
+                          {character.class}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Subclass:</span>
+                        <span className="text-white capitalize">
+                          {character.subclass.replace(/-/g, " ")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Ancestry:</span>
+                        <span className="text-white capitalize">
+                          {character.ancestry}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Community:</span>
+                        <span className="text-white capitalize">
+                          {character.community}
+                        </span>
+                      </div>
+                    </div>
+
+                    {(character.experience1 ?? character.experience2) && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                          Experiences:
+                        </h4>
+                        <div className="space-y-1">
+                          {character.experience1 && (
+                            <p className="text-xs text-slate-400">
+                              • {character.experience1}
+                            </p>
+                          )}
+                          {character.experience2 && (
+                            <p className="text-xs text-slate-400">
+                              • {character.experience2}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-slate-500">
+                      Created {new Date(character.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
