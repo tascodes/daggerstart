@@ -8,6 +8,7 @@
  */
 
 import { initTRPC, TRPCError } from "@trpc/server";
+import { observable } from "@trpc/server/observable";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -131,3 +132,10 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Subscription procedure
+ * 
+ * For real-time updates via Server-Sent Events
+ */
+export { observable };

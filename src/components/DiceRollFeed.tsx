@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import Image from "next/image";
+import RollOutcomeBadge from "~/components/RollOutcomeBadge";
 
 interface DiceRollFeedProps {
   gameId: string;
@@ -22,10 +23,26 @@ interface DiceRollFeedProps {
   limit?: number;
 }
 
-export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 }: DiceRollFeedProps) {
-  const { data: rolls, isLoading, refetch } = api.game.getRecentRolls.useQuery(
-    { gameId, limit },
-    { refetchInterval: 3000 } // Refresh every 3 seconds for now
+export default function DiceRollFeed({
+  gameId,
+  isGameMaster = false,
+  limit = 10,
+}: DiceRollFeedProps) {
+  const {
+    data: rolls,
+    isLoading,
+    refetch,
+  } = api.game.getRecentRolls.useQuery({ gameId, limit });
+
+  // Subscribe to real-time dice roll updates
+  api.game.onDiceRoll.useSubscription(
+    { gameId },
+    {
+      onData: (_newRoll) => {
+        // Trigger a refetch to get updated data including the new roll
+        void refetch();
+      },
+    },
   );
 
   const clearRolls = api.game.clearRolls.useMutation({
@@ -40,16 +57,16 @@ export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 
 
   if (isLoading) {
     return (
-      <div className="p-4 rounded-lg border border-slate-700 bg-slate-800">
-        <h3 className="text-lg font-bold text-white mb-4">Recent Rolls</h3>
+      <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+        <h3 className="mb-4 text-lg font-bold text-white">Recent Rolls</h3>
         <div className="text-slate-400">Loading rolls...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 rounded-lg border border-slate-700 bg-slate-800">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+      <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-bold text-white">Recent Rolls</h3>
         {isGameMaster && rolls && rolls.length > 0 && (
           <AlertDialog>
@@ -57,20 +74,22 @@ export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-red-400 hover:text-red-300 hover:bg-red-950"
+                className="text-red-400 hover:bg-red-950 hover:text-red-300"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="mr-2 h-4 w-4" />
                 Clear History
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-slate-800 border-slate-700">
+            <AlertDialogContent className="border-slate-700 bg-slate-800">
               <AlertDialogHeader>
                 <AlertDialogTitle className="text-white">
                   Clear Dice Roll History
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-slate-400">
-                  Are you sure you want to permanently delete all dice roll history for this game? 
-                  This action cannot be undone and will remove all {rolls.length} roll{rolls.length !== 1 ? 's' : ''} from the record.
+                  Are you sure you want to permanently delete all dice roll
+                  history for this game? This action cannot be undone and will
+                  remove all {rolls.length} roll{rolls.length !== 1 ? "s" : ""}{" "}
+                  from the record.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -89,38 +108,43 @@ export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 
           </AlertDialog>
         )}
       </div>
-      
+
       {!rolls || rolls.length === 0 ? (
-        <div className="text-slate-400 text-center py-8">
+        <div className="py-8 text-center text-slate-400">
           No dice rolls yet. Be the first to roll!
         </div>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="max-h-96 space-y-3 overflow-y-auto">
           {rolls.map((roll) => (
-            <div key={roll.id} className="bg-slate-700 rounded-lg p-3 border border-slate-600">
+            <div
+              key={roll.id}
+              className="rounded-lg border border-slate-600 bg-slate-700 p-3"
+            >
               {/* Header with user info */}
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 {roll.user.image && (
                   <Image
                     src={roll.user.image}
                     alt={roll.user.name ?? ""}
                     width={24}
                     height={24}
-                    className="w-6 h-6 rounded-full"
+                    className="h-6 w-6 rounded-full"
                   />
                 )}
-                <span className="text-white font-medium">{roll.user.name}</span>
+                <span className="font-medium text-white">{roll.user.name}</span>
                 {roll.character && (
                   <>
                     <span className="text-slate-400">as</span>
-                    <span className="text-sky-400 font-medium">{roll.character.name}</span>
+                    <span className="font-medium text-sky-400">
+                      {roll.character.name}
+                    </span>
                   </>
                 )}
-                <div className="flex items-center gap-1 ml-auto">
+                <div className="ml-auto flex items-center gap-1">
                   {roll.rollType === "Action" ? (
-                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <Zap className="h-4 w-4 text-yellow-500" />
                   ) : (
-                    <Sword className="w-4 h-4 text-red-500" />
+                    <Sword className="h-4 w-4 text-red-500" />
                   )}
                   <span className="text-xs text-slate-400">
                     {new Date(roll.createdAt).toLocaleTimeString()}
@@ -130,8 +154,10 @@ export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 
 
               {/* Roll name and type */}
               <div className="mb-2">
-                <span className="text-white font-semibold">{roll.name}</span>
-                <span className="text-slate-400 text-sm ml-2">({roll.diceExpression})</span>
+                <span className="font-semibold text-white">{roll.name}</span>
+                <span className="ml-2 text-sm text-slate-400">
+                  ({roll.diceExpression})
+                </span>
               </div>
 
               {/* Results */}
@@ -140,44 +166,54 @@ export default function DiceRollFeed({ gameId, isGameMaster = false, limit = 10 
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-slate-400">Hope:</span>
-                      <span className="text-lg font-bold text-yellow-400">{roll.hopeResult}</span>
+                      <span className="text-lg font-bold text-yellow-400">
+                        {roll.hopeResult}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-slate-400">Fear:</span>
-                      <span className="text-lg font-bold text-red-400">{roll.fearResult}</span>
+                      <span className="text-lg font-bold text-red-400">
+                        {roll.fearResult}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 ml-auto">
+                    <div className="ml-auto flex items-center gap-2">
                       <span className="text-sm text-slate-400">Total:</span>
-                      <span className="text-xl font-bold text-white">{roll.total}</span>
+                      <span className="text-xl font-bold text-white">
+                        {roll.total}
+                      </span>
+                      {roll.modifier !== null && roll.modifier !== 0 && (
+                        <>
+                          <span className="text-sm text-slate-400">
+                            {roll.modifier > 0 ? "+" : ""}
+                            {roll.modifier}
+                          </span>
+                          <span className="text-sm text-slate-400">=</span>
+                          <span className="text-xl font-bold text-sky-400">
+                            {roll.finalTotal}
+                          </span>
+                          <RollOutcomeBadge
+                            hopeResult={roll.hopeResult!}
+                            fearResult={roll.fearResult!}
+                            size="md"
+                          />
+                        </>
+                      )}
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-400">Outcome:</span>
-                    <span 
-                      className={`font-bold text-sm px-2 py-1 rounded ${
-                        roll.rollOutcome === "Critical Success" 
-                          ? "bg-purple-600 text-white"
-                          : roll.rollOutcome === "with Hope"
-                          ? "bg-yellow-600 text-white"
-                          : "bg-red-600 text-white"
-                      }`}
-                    >
-                      {roll.rollOutcome}
-                    </span>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-400">Individual:</span>
-                    <span className="text-white font-mono">
+                    <span className="font-mono text-white">
                       [{(roll.individualResults as number[]).join(", ")}]
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="ml-auto flex items-center gap-2">
                     <span className="text-sm text-slate-400">Total:</span>
-                    <span className="text-xl font-bold text-red-400">{roll.total}</span>
+                    <span className="text-xl font-bold text-red-400">
+                      {roll.total}
+                    </span>
                   </div>
                 </div>
               )}

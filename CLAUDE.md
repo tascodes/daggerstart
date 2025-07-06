@@ -81,6 +81,8 @@ This is a T3 Stack application built with:
 
 ## Components
 
+Use `const` for function definitions and component definitions. Example: `const myfunction = () => {}`
+
 ### shadcn
 
 Prefer using shadcn components where possible.

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, observable } from "~/server/api/trpc";
+import { diceRollEmitter, type DiceRollEventData } from "~/server/api/events";
 
 const createGameSchema = z.object({
   name: z
@@ -17,6 +18,7 @@ const rollActionDiceSchema = z.object({
   gameId: z.string(),
   name: z.string().min(1, "Roll name is required"),
   characterId: z.string().optional(),
+  modifier: z.number().int().optional(),
 });
 
 const rollDamageSchema = z.object({
@@ -303,16 +305,10 @@ export const gameRouter = createTRPCRouter({
       const hopeResult = Math.floor(Math.random() * 12) + 1;
       const fearResult = Math.floor(Math.random() * 12) + 1;
       const total = hopeResult + fearResult;
-
-      // Determine outcome
-      let rollOutcome: string;
-      if (hopeResult === fearResult) {
-        rollOutcome = "Critical Success";
-      } else if (hopeResult > fearResult) {
-        rollOutcome = "with Hope";
-      } else {
-        rollOutcome = "with Fear";
-      }
+      
+      // Apply modifier if provided
+      const modifier = input.modifier ?? 0;
+      const finalTotal = total + modifier;
 
       // Save to database
       const diceRoll = await ctx.db.diceRoll.create({
@@ -322,9 +318,10 @@ export const gameRouter = createTRPCRouter({
           diceExpression: "2d12",
           individualResults: [hopeResult, fearResult],
           total,
+          modifier: modifier !== 0 ? modifier : null,
+          finalTotal: modifier !== 0 ? finalTotal : null,
           hopeResult,
           fearResult,
-          rollOutcome,
           gameId: input.gameId,
           userId: ctx.session.user.id,
           characterId: input.characterId,
@@ -333,6 +330,24 @@ export const gameRouter = createTRPCRouter({
           user: { select: { id: true, name: true, image: true } },
           character: { select: { id: true, name: true } },
         },
+      });
+
+      // Emit event for real-time updates
+      diceRollEmitter.emit("newRoll", {
+        id: diceRoll.id,
+        gameId: input.gameId,
+        name: diceRoll.name,
+        rollType: diceRoll.rollType,
+        total: diceRoll.total,
+        modifier: diceRoll.modifier,
+        finalTotal: diceRoll.finalTotal,
+        hopeResult: diceRoll.hopeResult,
+        fearResult: diceRoll.fearResult,
+        individualResults: diceRoll.individualResults,
+        diceExpression: diceRoll.diceExpression,
+        createdAt: diceRoll.createdAt,
+        user: diceRoll.user,
+        character: diceRoll.character,
       });
 
       return diceRoll;
@@ -399,6 +414,24 @@ export const gameRouter = createTRPCRouter({
         },
       });
 
+      // Emit event for real-time updates
+      diceRollEmitter.emit("newRoll", {
+        id: diceRoll.id,
+        gameId: input.gameId,
+        name: diceRoll.name,
+        rollType: diceRoll.rollType,
+        total: diceRoll.total,
+        modifier: null,
+        finalTotal: null,
+        hopeResult: null,
+        fearResult: null,
+        individualResults: diceRoll.individualResults,
+        diceExpression: diceRoll.diceExpression,
+        createdAt: diceRoll.createdAt,
+        user: diceRoll.user,
+        character: diceRoll.character,
+      });
+
       return diceRoll;
     }),
 
@@ -454,5 +487,38 @@ export const gameRouter = createTRPCRouter({
       });
 
       return { deletedCount: result.count };
+    }),
+
+  onDiceRoll: protectedProcedure
+    .input(z.object({ gameId: z.string() }))
+    .subscription(async ({ ctx, input }) => {
+      // Verify user is in the game
+      const game = await ctx.db.game.findFirst({
+        where: {
+          id: input.gameId,
+          OR: [
+            { gameMasterId: ctx.session.user.id },
+            { characters: { some: { userId: ctx.session.user.id } } },
+          ],
+        },
+      });
+
+      if (!game) {
+        throw new Error("You are not authorized to subscribe to rolls in this game");
+      }
+
+      return observable((emit) => {
+        const onNewRoll = (data: DiceRollEventData) => {
+          if (data.gameId === input.gameId) {
+            emit.next(data);
+          }
+        };
+
+        diceRollEmitter.on("newRoll", onNewRoll);
+
+        return () => {
+          diceRollEmitter.off("newRoll", onNewRoll);
+        };
+      });
     }),
 });

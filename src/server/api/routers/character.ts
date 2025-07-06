@@ -26,6 +26,16 @@ const createCharacterSchema = z.object({
     .optional(),
 });
 
+const updateAbilitiesSchema = z.object({
+  id: z.string(),
+  agilityModifier: z.number().int().min(-10).max(10),
+  strengthModifier: z.number().int().min(-10).max(10),
+  finesseModifier: z.number().int().min(-10).max(10),
+  instinctModifier: z.number().int().min(-10).max(10),
+  presenceModifier: z.number().int().min(-10).max(10),
+  knowledgeModifier: z.number().int().min(-10).max(10),
+});
+
 export const characterRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createCharacterSchema)
@@ -41,6 +51,7 @@ export const characterRouter = createTRPCRouter({
           level: input.level,
           experience1: input.experience1,
           experience2: input.experience2,
+          // Ability modifiers default to 0 via schema
           user: { connect: { id: ctx.session.user.id } },
         },
       });
@@ -90,6 +101,36 @@ export const characterRouter = createTRPCRouter({
       }
 
       return character;
+    }),
+
+  updateAbilities: protectedProcedure
+    .input(updateAbilitiesSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: {
+          agilityModifier: input.agilityModifier,
+          strengthModifier: input.strengthModifier,
+          finesseModifier: input.finesseModifier,
+          instinctModifier: input.instinctModifier,
+          presenceModifier: input.presenceModifier,
+          knowledgeModifier: input.knowledgeModifier,
+        },
+      });
     }),
 
   delete: protectedProcedure

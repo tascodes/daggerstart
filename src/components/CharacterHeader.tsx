@@ -5,6 +5,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { User, Crown } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { subclassesByClass, type ClassKeys } from "~/app/pc/new/constants";
 
 interface CharacterHeaderProps {
   character: {
@@ -28,7 +29,20 @@ interface CharacterHeaderProps {
   isOwner: boolean;
 }
 
-export default function CharacterHeader({ character, isOwner }: CharacterHeaderProps) {
+export default function CharacterHeader({
+  character,
+  isOwner,
+}: CharacterHeaderProps) {
+  // Helper function to get nice subclass label
+  const getSubclassLabel = (characterClass: string, subclass: string): string => {
+    const classKey = characterClass as ClassKeys;
+    const subclassOptions = subclassesByClass[classKey];
+    if (subclassOptions) {
+      const subclassOption = subclassOptions.find(option => option.value === subclass);
+      return subclassOption?.label ?? subclass;
+    }
+    return subclass;
+  };
   return (
     <Card className="border-slate-700 bg-slate-800 shadow-lg">
       <CardContent className="p-6">
@@ -36,12 +50,16 @@ export default function CharacterHeader({ character, isOwner }: CharacterHeaderP
           {/* Character Info */}
           <div className="flex-1">
             <div className="mb-3 flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-white">{character.name}</h1>
+              <h1 className="text-3xl font-bold text-white">
+                {character.name}
+              </h1>
               {isOwner && <Crown className="h-6 w-6 text-yellow-500" />}
             </div>
-            
+
             {character.pronouns && (
-              <p className="mb-4 text-lg text-slate-400">{character.pronouns}</p>
+              <p className="mb-4 text-lg text-slate-400">
+                {character.pronouns}
+              </p>
             )}
 
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -51,20 +69,26 @@ export default function CharacterHeader({ character, isOwner }: CharacterHeaderP
                   {character.level}
                 </Badge>
               </div>
-              
+
               <div>
                 <p className="text-sm text-slate-400">Heritage</p>
-                <p className="font-medium text-white capitalize">{character.ancestry}</p>
+                <p className="font-medium text-white capitalize">
+                  {character.ancestry}
+                </p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-slate-400">Class</p>
-                <p className="font-medium text-white capitalize">{character.class}</p>
+                <p className="font-medium text-white capitalize">
+                  {character.class}
+                </p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-slate-400">Subclass</p>
-                <p className="font-medium text-white capitalize">{character.subclass}</p>
+                <p className="font-medium text-white">
+                  {getSubclassLabel(character.class, character.subclass)}
+                </p>
               </div>
             </div>
           </div>
@@ -98,7 +122,7 @@ export default function CharacterHeader({ character, isOwner }: CharacterHeaderP
             {character.game && (
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-3">
                 <p className="text-sm text-slate-400">Current Game</p>
-                <Link 
+                <Link
                   href={`/game/${character.game.id}`}
                   className="font-medium text-sky-400 hover:text-sky-300"
                 >

@@ -87,6 +87,15 @@ model Character {
     level       Int
     experience1 String?
     experience2 String?
+    
+    // Ability modifiers (default to 0)
+    agilityModifier   Int @default(0)
+    strengthModifier  Int @default(0)
+    finesseModifier   Int @default(0)
+    instinctModifier  Int @default(0)
+    presenceModifier  Int @default(0)
+    knowledgeModifier Int @default(0)
+    
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
     
@@ -128,11 +137,12 @@ model DiceRoll {
     diceExpression String // e.g., "2d12", "1d8", etc.
     individualResults Json // Array of individual die results
     total       Int      // Sum of all dice
+    modifier    Int?     // Ability modifier or other bonus applied
+    finalTotal  Int?     // Total + modifier (for display purposes)
     
     // Action roll specific data
     hopeResult  Int?     // Result of Hope die (for Action rolls)
     fearResult  Int?     // Result of Fear die (for Action rolls)
-    rollOutcome String?  // "with Hope", "with Fear", "Critical Success"
     
     // Relations
     game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)

@@ -26,6 +26,7 @@ import { Crown, Users, UserMinus, UserPlus } from "lucide-react";
 import Image from "next/image";
 import DiceRoller from "~/components/DiceRoller";
 import DiceRollFeed from "~/components/DiceRollFeed";
+import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 
 interface GameDetailClientProps {
   gameId: string;
@@ -389,6 +390,9 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
             />
           </div>
         </div>
+
+        {/* Floating Dice Rolls */}
+        <FloatingDiceRolls gameId={gameId} />
       </div>
     </div>
   );

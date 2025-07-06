@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import CharacterHeader from "~/components/CharacterHeader";
 import CharacterExperiences from "~/components/CharacterExperiences";
+import CharacterAbilities from "~/components/CharacterAbilities";
+import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 import { api } from "~/trpc/react";
 
 interface CharacterDetailClientProps {
@@ -16,7 +18,7 @@ export default function CharacterDetailClient({
   characterId 
 }: CharacterDetailClientProps) {
   const { data: session } = useSession();
-  const { data: character } = api.character.getById.useQuery({ id: characterId });
+  const { data: character, refetch } = api.character.getById.useQuery({ id: characterId });
 
   if (!character) {
     return (
@@ -52,6 +54,16 @@ export default function CharacterDetailClient({
           <CharacterHeader character={character} isOwner={isOwner} />
         </div>
 
+        {/* Abilities Section */}
+        <div className="mb-8">
+          <CharacterAbilities 
+            character={character} 
+            isOwner={isOwner}
+            game={character.game}
+            onUpdate={() => void refetch()}
+          />
+        </div>
+
         {/* Character Details Grid */}
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Experiences Section */}
@@ -81,6 +93,9 @@ export default function CharacterDetailClient({
             </div>
           </div>
         </div>
+
+        {/* Floating Dice Rolls */}
+        <FloatingDiceRolls gameId={character.game?.id} />
       </div>
     </div>
   );
