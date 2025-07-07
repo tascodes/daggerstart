@@ -55,7 +55,7 @@ export default function GameListClient() {
 
   const handleCreateGame = () => {
     if (!gameName.trim()) return;
-    
+
     createGame.mutate({
       name: gameName.trim(),
       description: gameDescription.trim() || undefined,
@@ -70,9 +70,9 @@ export default function GameListClient() {
     <div className="min-h-screen bg-slate-900 py-8">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">My Games</h1>
+            <h1 className="mb-2 text-4xl font-bold text-white">My Games</h1>
             <p className="text-slate-400">
               Games you&apos;re running or participating in
             </p>
@@ -92,9 +92,11 @@ export default function GameListClient() {
                   Create New Game
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-slate-800 border-slate-700">
+              <DialogContent className="border-slate-700 bg-slate-800">
                 <DialogHeader>
-                  <DialogTitle className="text-white">Create New Game</DialogTitle>
+                  <DialogTitle className="text-white">
+                    Create New Game
+                  </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     Create a new game session. You&apos;ll be the Game Master.
                   </DialogDescription>
@@ -151,11 +153,11 @@ export default function GameListClient() {
 
         {/* Games List */}
         {games?.length === 0 ? (
-          <div className="text-center py-16">
-            <h3 className="text-xl font-semibold text-white mb-4">
+          <div className="py-16 text-center">
+            <h3 className="mb-4 text-xl font-semibold text-white">
               No games yet
             </h3>
-            <p className="text-slate-400 mb-8">
+            <p className="mb-8 text-slate-400">
               Create your first game or ask a Game Master to invite you!
             </p>
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -167,30 +169,30 @@ export default function GameListClient() {
             </Dialog>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {games?.map((game) => {
               const isGameMaster = game.gameMaster.id === session?.user.id;
               const userCharacter = game.characters.find(
-                (char) => char.user.id === session?.user.id
+                (char) => char.user.id === session?.user.id,
               );
 
               return (
                 <div
                   key={game.id}
-                  className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700 hover:border-slate-600 transition-colors"
+                  className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg transition-colors hover:border-slate-600"
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="mb-4 flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="mb-2 flex items-center gap-2">
                         <h3 className="text-xl font-bold text-white">
                           {game.name}
                         </h3>
                         {isGameMaster && (
-                          <Crown className="w-5 h-5 text-yellow-500" />
+                          <Crown className="h-5 w-5 text-yellow-500" />
                         )}
                       </div>
                       {game.description && (
-                        <p className="text-sm text-slate-400 mb-3">
+                        <p className="mb-3 text-sm text-slate-400">
                           {game.description}
                         </p>
                       )}
@@ -201,20 +203,20 @@ export default function GameListClient() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-400 hover:text-red-300 hover:bg-red-950"
+                            className="text-red-400 hover:bg-red-950 hover:text-red-300"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-slate-800 border-slate-700">
+                        <AlertDialogContent className="border-slate-700 bg-slate-800">
                           <AlertDialogHeader>
                             <AlertDialogTitle className="text-white">
                               Delete Game
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-slate-400">
-                              Are you sure you want to delete &quot;{game.name}&quot;? This
-                              action cannot be undone and will remove all
-                              characters from the game.
+                              Are you sure you want to delete &quot;{game.name}
+                              &quot;? This action cannot be undone and will
+                              remove all characters from the game.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -233,36 +235,40 @@ export default function GameListClient() {
                     )}
                   </div>
 
-                  <div className="space-y-3 mb-4">
+                  <div className="mb-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-sm">Game Master:</span>
-                      <span className="text-white text-sm">
+                      <span className="text-sm text-slate-400">
+                        Game Master:
+                      </span>
+                      <span className="text-sm text-white">
                         {game.gameMaster.name}
                         {isGameMaster && " (You)"}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 text-sm flex items-center gap-1">
-                        <Users className="w-4 h-4" />
+                      <span className="flex items-center gap-1 text-sm text-slate-400">
+                        <Users className="h-4 w-4" />
                         Characters:
                       </span>
-                      <span className="text-white text-sm">
+                      <span className="text-sm text-white">
                         {game._count.characters}
                       </span>
                     </div>
 
                     {userCharacter && (
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 text-sm">Your Character:</span>
-                        <span className="text-sky-400 text-sm font-medium">
+                        <span className="text-sm text-slate-400">
+                          Your Character:
+                        </span>
+                        <span className="text-sm font-medium text-sky-400">
                           {userCharacter.name}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between border-t border-slate-700 pt-4">
                     <div className="text-xs text-slate-500">
                       Created {new Date(game.createdAt).toLocaleDateString()}
                     </div>

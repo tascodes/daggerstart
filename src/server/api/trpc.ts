@@ -135,7 +135,7 @@ export const protectedProcedure = t.procedure
 
 /**
  * Subscription procedure
- * 
+ *
  * For real-time updates via Server-Sent Events
  */
 export { observable };

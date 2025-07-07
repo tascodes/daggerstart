@@ -19,10 +19,11 @@ import { Trash2 } from "lucide-react";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const { data: characters, isLoading, refetch } = api.character.getByUserId.useQuery(
-    undefined,
-    { enabled: !!session }
-  );
+  const {
+    data: characters,
+    isLoading,
+    refetch,
+  } = api.character.getByUserId.useQuery(undefined, { enabled: !!session });
 
   const deleteCharacter = api.character.delete.useMutation({
     onSuccess: () => {
@@ -36,7 +37,7 @@ export default function Home() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-white">Loading...</div>
       </div>
     );
@@ -46,7 +47,7 @@ export default function Home() {
     <div className="min-h-screen bg-slate-900 py-8">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold text-white">My Characters</h1>
           <div className="flex items-center gap-4">
             {session ? (
@@ -75,11 +76,11 @@ export default function Home() {
 
         {/* Content */}
         {!session ? (
-          <div className="text-center py-16">
-            <h2 className="text-2xl font-semibold text-white mb-4">
+          <div className="py-16 text-center">
+            <h2 className="mb-4 text-2xl font-semibold text-white">
               Welcome to Character Creator
             </h2>
-            <p className="text-slate-400 mb-8">
+            <p className="mb-8 text-slate-400">
               Sign in to create and manage your characters.
             </p>
             <Button
@@ -110,15 +111,15 @@ export default function Home() {
 
             {/* Characters Grid */}
             {isLoading ? (
-              <div className="text-center py-8">
+              <div className="py-8 text-center">
                 <div className="text-white">Loading your characters...</div>
               </div>
             ) : characters?.length === 0 ? (
-              <div className="text-center py-16">
-                <h3 className="text-xl font-semibold text-white mb-4">
+              <div className="py-16 text-center">
+                <h3 className="mb-4 text-xl font-semibold text-white">
                   No characters yet
                 </h3>
-                <p className="text-slate-400 mb-8">
+                <p className="mb-8 text-slate-400">
                   Create your first character to get started on your adventure!
                 </p>
                 <Link href="/pc/new">
@@ -128,15 +129,15 @@ export default function Home() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {characters?.map((character) => (
                   <div
                     key={character.id}
-                    className="bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-700 hover:border-slate-600 transition-colors"
+                    className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg transition-colors hover:border-slate-600"
                   >
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="mb-4 flex items-start justify-between">
                       <div>
-                        <h3 className="text-xl font-bold text-white mb-1">
+                        <h3 className="mb-1 text-xl font-bold text-white">
                           {character.name}
                         </h3>
                         {character.pronouns && (
@@ -146,7 +147,7 @@ export default function Home() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="bg-sky-500 text-white text-xs px-2 py-1 rounded">
+                        <span className="rounded bg-sky-500 px-2 py-1 text-xs text-white">
                           Level {character.level}
                         </span>
                         <AlertDialog>
@@ -154,20 +155,21 @@ export default function Home() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-400 hover:text-red-300 hover:bg-red-950"
+                              className="text-red-400 hover:bg-red-950 hover:text-red-300"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-slate-800 border-slate-700">
+                          <AlertDialogContent className="border-slate-700 bg-slate-800">
                             <AlertDialogHeader>
                               <AlertDialogTitle className="text-white">
                                 Delete Character
                               </AlertDialogTitle>
                               <AlertDialogDescription className="text-slate-400">
-                                Are you sure you want to delete &quot;{character.name}&quot;? This
-                                action cannot be undone and will remove the character from
-                                any games they&apos;re currently in.
+                                Are you sure you want to delete &quot;
+                                {character.name}&quot;? This action cannot be
+                                undone and will remove the character from any
+                                games they&apos;re currently in.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -175,19 +177,23 @@ export default function Home() {
                                 Cancel
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => handleDeleteCharacter(character.id)}
+                                onClick={() =>
+                                  handleDeleteCharacter(character.id)
+                                }
                                 disabled={deleteCharacter.isPending}
                                 className="bg-red-600 text-white hover:bg-red-700"
                               >
-                                {deleteCharacter.isPending ? "Deleting..." : "Delete"}
+                                {deleteCharacter.isPending
+                                  ? "Deleting..."
+                                  : "Delete"}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2 mb-4">
+
+                    <div className="mb-4 space-y-2">
                       <div className="flex justify-between">
                         <span className="text-slate-400">Class:</span>
                         <span className="text-white capitalize">
@@ -216,7 +222,7 @@ export default function Home() {
 
                     {(character.experience1 ?? character.experience2) && (
                       <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-slate-300 mb-2">
+                        <h4 className="mb-2 text-sm font-semibold text-slate-300">
                           Experiences:
                         </h4>
                         <div className="space-y-1">
@@ -236,11 +242,12 @@ export default function Home() {
 
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-slate-500">
-                        Created {new Date(character.createdAt).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(character.createdAt).toLocaleDateString()}
                       </div>
                       <Link href={`/character/${character.id}`}>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           className="bg-sky-500 text-white hover:bg-sky-600"
                         >
                           View Details

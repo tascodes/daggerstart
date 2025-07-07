@@ -30,7 +30,10 @@ export interface DiceRollEvents {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 declare interface DiceRollEmitter {
-  on<U extends keyof DiceRollEvents>(event: U, listener: DiceRollEvents[U]): this;
+  on<U extends keyof DiceRollEvents>(
+    event: U,
+    listener: DiceRollEvents[U],
+  ): this;
   emit<U extends keyof DiceRollEvents>(
     event: U,
     ...args: Parameters<DiceRollEvents[U]>

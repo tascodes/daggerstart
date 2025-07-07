@@ -18,18 +18,25 @@ interface CharacterDetailClientProps {
   characterId: string;
 }
 
-export default function CharacterDetailClient({ 
-  characterId 
+export default function CharacterDetailClient({
+  characterId,
 }: CharacterDetailClientProps) {
   const { data: session } = useSession();
-  const { data: character, refetch } = api.character.getById.useQuery({ id: characterId });
+  const { data: character, refetch } = api.character.getById.useQuery({
+    id: characterId,
+  });
 
   if (!character) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-white">Character not found</h1>
-          <p className="text-slate-400">This character doesn&apos;t exist or you don&apos;t have permission to view it.</p>
+          <h1 className="mb-4 text-2xl font-bold text-white">
+            Character not found
+          </h1>
+          <p className="text-slate-400">
+            This character doesn&apos;t exist or you don&apos;t have permission
+            to view it.
+          </p>
         </div>
       </div>
     );
@@ -65,8 +72,8 @@ export default function CharacterDetailClient({
 
         {/* Abilities Section */}
         <div className="mb-8">
-          <CharacterAbilities 
-            character={character} 
+          <CharacterAbilities
+            character={character}
             isOwner={isOwner}
             game={character.game}
             onUpdate={() => void refetch()}
@@ -75,8 +82,8 @@ export default function CharacterDetailClient({
 
         {/* Health Section */}
         <div className="mb-8">
-          <HealthSection 
-            character={character} 
+          <HealthSection
+            character={character}
             isOwner={isOwner}
             onUpdate={() => void refetch()}
           />
@@ -84,8 +91,8 @@ export default function CharacterDetailClient({
 
         {/* Defense Section */}
         <div className="mb-8">
-          <DefenseSection 
-            character={character} 
+          <DefenseSection
+            character={character}
             isOwner={isOwner}
             onUpdate={() => void refetch()}
           />
@@ -93,8 +100,8 @@ export default function CharacterDetailClient({
 
         {/* Gold Section */}
         <div className="mb-8">
-          <GoldSection 
-            character={character} 
+          <GoldSection
+            character={character}
             isOwner={isOwner}
             onUpdate={() => void refetch()}
           />
@@ -104,7 +111,7 @@ export default function CharacterDetailClient({
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Experiences Section */}
           <div>
-            <CharacterExperiences 
+            <CharacterExperiences
               experience1={character.experience1}
               experience2={character.experience2}
             />
@@ -112,14 +119,18 @@ export default function CharacterDetailClient({
 
           {/* Additional Info Section */}
           <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-bold text-white">Additional Details</h2>
-            
+            <h2 className="mb-4 text-xl font-bold text-white">
+              Additional Details
+            </h2>
+
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-slate-400">Community</p>
-                <p className="font-medium text-white capitalize">{character.community}</p>
+                <p className="font-medium text-white capitalize">
+                  {character.community}
+                </p>
               </div>
-              
+
               {/* Future sections can be added here */}
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
                 <p className="text-center text-slate-400">

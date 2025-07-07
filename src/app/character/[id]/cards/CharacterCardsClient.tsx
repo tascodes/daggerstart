@@ -26,9 +26,9 @@ interface CharacterCardsClientProps {
   character: Character;
 }
 
-export default function CharacterCardsClient({ 
+export default function CharacterCardsClient({
   characterId,
-  character 
+  character,
 }: CharacterCardsClientProps) {
   // const { data: session } = useSession();
 
@@ -36,8 +36,13 @@ export default function CharacterCardsClient({
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-white">Character not found</h1>
-          <p className="text-slate-400">This character doesn&apos;t exist or you don&apos;t have permission to view it.</p>
+          <h1 className="mb-4 text-2xl font-bold text-white">
+            Character not found
+          </h1>
+          <p className="text-slate-400">
+            This character doesn&apos;t exist or you don&apos;t have permission
+            to view it.
+          </p>
         </div>
       </div>
     );
@@ -75,7 +80,9 @@ export default function CharacterCardsClient({
         {/* Cards Content */}
         <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 shadow-lg">
           <div className="text-center">
-            <h2 className="mb-4 text-2xl font-bold text-white">Character Cards</h2>
+            <h2 className="mb-4 text-2xl font-bold text-white">
+              Character Cards
+            </h2>
             <p className="text-slate-400">
               Card management interface coming soon...
             </p>

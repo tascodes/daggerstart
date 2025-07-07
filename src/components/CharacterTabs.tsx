@@ -10,19 +10,21 @@ interface CharacterTabsProps {
 
 const CharacterTabs = ({ characterId, activeTab }: CharacterTabsProps) => {
   const pathname = usePathname();
-  
+
   const tabs = [
     {
       id: "details",
       label: "Character Details",
       href: `/character/${characterId}`,
-      isActive: activeTab === "details" || pathname === `/character/${characterId}`,
+      isActive:
+        activeTab === "details" || pathname === `/character/${characterId}`,
     },
     {
       id: "cards",
       label: "Cards",
       href: `/character/${characterId}/cards`,
-      isActive: activeTab === "cards" || pathname === `/character/${characterId}/cards`,
+      isActive:
+        activeTab === "cards" || pathname === `/character/${characterId}/cards`,
     },
   ];
 
@@ -33,7 +35,7 @@ const CharacterTabs = ({ characterId, activeTab }: CharacterTabsProps) => {
           <Link
             key={tab.id}
             href={tab.href}
-            className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+            className={`border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap transition-colors ${
               tab.isActive
                 ? "border-sky-500 text-sky-400"
                 : "border-transparent text-slate-400 hover:border-slate-600 hover:text-slate-300"

@@ -52,7 +52,16 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const utils = api.useUtils();
   const updateFear = api.game.updateFear.useMutation({
-    onSuccess: () => {
+    onMutate: async (variables) => {
+      await utils.game.getFear.cancel({ gameId });
+      const previousFear = utils.game.getFear.getData({ gameId });
+      utils.game.getFear.setData({ gameId }, variables.fearCount);
+      return { previousFear };
+    },
+    onError: (error, variables, context) => {
+      utils.game.getFear.setData({ gameId }, context?.previousFear);
+    },
+    onSettled: () => {
       void utils.game.getFear.invalidate({ gameId });
     },
   });
@@ -258,7 +267,6 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 </div>
               </div>
             </div>
-
           </div>
 
           {/* Characters Section */}
@@ -390,7 +398,6 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
               value={fearCount ?? 0}
               maxValue={12}
               onValueChange={handleFearChange}
-              disabled={updateFear.isPending}
             />
             <p className="mt-2 text-xs text-slate-400">
               Increases when players roll with Fear
@@ -430,9 +437,13 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
         </div>
 
         {/* Floating Dice Rolls */}
-        <FloatingDiceRolls 
-          gameId={gameId} 
-          onFearRoll={isGameMaster ? () => void utils.game.getFear.invalidate({ gameId }) : undefined}
+        <FloatingDiceRolls
+          gameId={gameId}
+          onFearRoll={
+            isGameMaster
+              ? () => void utils.game.getFear.invalidate({ gameId })
+              : undefined
+          }
         />
       </div>
     </div>

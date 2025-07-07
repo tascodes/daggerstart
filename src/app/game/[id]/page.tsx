@@ -20,10 +20,10 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
   try {
     // Prefetch game data
     void api.game.getById.prefetch({ id: resolvedParams.id });
-    
+
     // Check if game exists by trying to fetch it
     const game = await api.game.getById({ id: resolvedParams.id });
-    
+
     if (!game) {
       notFound();
     }

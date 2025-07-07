@@ -8,7 +8,10 @@ interface CharacterExperiencesProps {
   experience2?: string | null;
 }
 
-export default function CharacterExperiences({ experience1, experience2 }: CharacterExperiencesProps) {
+export default function CharacterExperiences({
+  experience1,
+  experience2,
+}: CharacterExperiencesProps) {
   const hasExperiences = experience1 ?? experience2;
 
   return (
@@ -30,17 +33,21 @@ export default function CharacterExperiences({ experience1, experience2 }: Chara
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-sky-400"></div>
-                  <span className="text-sm font-medium text-slate-300">Experience 1</span>
+                  <span className="text-sm font-medium text-slate-300">
+                    Experience 1
+                  </span>
                 </div>
                 <p className="text-white">{experience1}</p>
               </div>
             )}
-            
+
             {experience2 && (
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
-                  <span className="text-sm font-medium text-slate-300">Experience 2</span>
+                  <span className="text-sm font-medium text-slate-300">
+                    Experience 2
+                  </span>
                 </div>
                 <p className="text-white">{experience2}</p>
               </div>

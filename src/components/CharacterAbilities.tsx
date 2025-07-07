@@ -89,11 +89,14 @@ export default function CharacterAbilities({
 
   const rollActionDice = api.game.rollActionDice.useMutation();
 
-  const handleAbilityClick = (abilityName: string, abilityKey: keyof Omit<CharacterAbilitiesProps['character'], 'id'>) => {
+  const handleAbilityClick = (
+    abilityName: string,
+    abilityKey: keyof Omit<CharacterAbilitiesProps["character"], "id">,
+  ) => {
     if (!game || isEditing) return;
-    
+
     const modifier = character[abilityKey];
-    
+
     rollActionDice.mutate({
       gameId: game.id,
       name: abilityName,
@@ -116,16 +119,18 @@ export default function CharacterAbilities({
     Object.entries(editValues).forEach(([key, value]) => {
       const numValue = parseInt(value);
       if (isNaN(numValue)) {
-        errors.push(`${key.replace('Modifier', '')} must be a valid number`);
+        errors.push(`${key.replace("Modifier", "")} must be a valid number`);
       } else if (numValue < -10 || numValue > 10) {
-        errors.push(`${key.replace('Modifier', '')} must be between -10 and 10`);
+        errors.push(
+          `${key.replace("Modifier", "")} must be between -10 and 10`,
+        );
       } else {
         numericValues[key] = numValue;
       }
     });
 
     if (errors.length > 0) {
-      alert(`Please fix the following errors:\n${errors.join('\n')}`);
+      alert(`Please fix the following errors:\n${errors.join("\n")}`);
       return;
     }
 
@@ -208,13 +213,15 @@ export default function CharacterAbilities({
             const editValue = editValues[ability.key];
 
             const canRoll = game && !isEditing;
-            
+
             return (
               <div key={ability.name} className="flex flex-col items-center">
                 {/* Ability Header */}
-                <div 
+                <div
                   className={`mb-2 w-full rounded-t-lg bg-slate-700 px-3 py-2 text-center ${
-                    canRoll ? 'cursor-pointer hover:bg-slate-600 transition-colors' : ''
+                    canRoll
+                      ? "cursor-pointer transition-colors hover:bg-slate-600"
+                      : ""
                   }`}
                   onClick={() => handleAbilityClick(ability.name, ability.key)}
                   title={canRoll ? `Roll ${ability.name}` : undefined}
@@ -247,11 +254,15 @@ export default function CharacterAbilities({
                         className="h-8 w-12 border-slate-500 bg-slate-600 text-center text-sm font-bold text-white"
                       />
                     ) : (
-                      <span 
+                      <span
                         className={`text-lg font-bold text-white ${
-                          canRoll ? 'cursor-pointer hover:text-sky-400 transition-colors' : ''
+                          canRoll
+                            ? "cursor-pointer transition-colors hover:text-sky-400"
+                            : ""
                         }`}
-                        onClick={() => handleAbilityClick(ability.name, ability.key)}
+                        onClick={() =>
+                          handleAbilityClick(ability.name, ability.key)
+                        }
                         title={canRoll ? `Roll ${ability.name}` : undefined}
                       >
                         {formatModifier(currentValue)}

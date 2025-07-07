@@ -34,11 +34,16 @@ export default function CharacterHeader({
   isOwner,
 }: CharacterHeaderProps) {
   // Helper function to get nice subclass label
-  const getSubclassLabel = (characterClass: string, subclass: string): string => {
+  const getSubclassLabel = (
+    characterClass: string,
+    subclass: string,
+  ): string => {
     const classKey = characterClass as ClassKeys;
     const subclassOptions = subclassesByClass[classKey];
     if (subclassOptions) {
-      const subclassOption = subclassOptions.find(option => option.value === subclass);
+      const subclassOption = subclassOptions.find(
+        (option) => option.value === subclass,
+      );
       return subclassOption?.label ?? subclass;
     }
     return subclass;

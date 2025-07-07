@@ -38,19 +38,19 @@ const updateAbilitiesSchema = z.object({
 
 const updateHealthStatSchema = z.object({
   id: z.string(),
-  field: z.enum(['hp', 'stress', 'hope', 'armor']),
+  field: z.enum(["hp", "stress", "hope", "armor"]),
   value: z.number().int().min(0).max(100),
 });
 
 const updateDefenseStatSchema = z.object({
   id: z.string(),
-  field: z.enum(['evasion']),
+  field: z.enum(["evasion"]),
   value: z.number().int().min(0).max(50),
 });
 
 const updateGoldStatSchema = z.object({
   id: z.string(),
-  field: z.enum(['goldHandfuls', 'goldBags']),
+  field: z.enum(["goldHandfuls", "goldBags"]),
   value: z.number().int().min(0).max(10),
 });
 
@@ -61,7 +61,7 @@ const updateGoldChestSchema = z.object({
 
 const updateDamageThresholdSchema = z.object({
   id: z.string(),
-  field: z.enum(['majorDamageThreshold', 'severeDamageThreshold']),
+  field: z.enum(["majorDamageThreshold", "severeDamageThreshold"]),
   value: z.string().optional(),
 });
 
@@ -113,17 +113,18 @@ export const characterRouter = createTRPCRouter({
       }
 
       // Allow viewing if user owns the character OR is in the same game
-      const canView = 
+      const canView =
         character.userId === ctx.session.user.id ||
-        (character.game && await ctx.db.game.findFirst({
-          where: {
-            id: character.game.id,
-            OR: [
-              { gameMasterId: ctx.session.user.id },
-              { characters: { some: { userId: ctx.session.user.id } } },
-            ],
-          },
-        }));
+        (character.game &&
+          (await ctx.db.game.findFirst({
+            where: {
+              id: character.game.id,
+              OR: [
+                { gameMasterId: ctx.session.user.id },
+                { characters: { some: { userId: ctx.session.user.id } } },
+              ],
+            },
+          })));
 
       if (!canView) {
         throw new Error("You don't have permission to view this character");

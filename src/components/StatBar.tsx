@@ -58,7 +58,7 @@ const StatBar = ({
       <button
         onClick={handleDecrement}
         disabled={disabled || value <= 0}
-        className="flex h-6 w-6 lg:h-5 lg:w-5 shrink-0 items-center justify-center rounded-full bg-slate-600 text-white transition-colors hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-600 text-white transition-colors hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
         title={`Decrease ${label}`}
       >
         <Minus className="h-3 w-3 lg:h-2.5 lg:w-2.5" />
@@ -67,10 +67,8 @@ const StatBar = ({
         {Array.from({ length: maxValue }, (_, index) => (
           <button
             key={index}
-            className={`h-6 w-6 lg:h-5 lg:w-5 border-2 transition-colors duration-150 ${
-              index < value
-                ? barColor.filled
-                : barColor.empty
+            className={`h-6 w-6 border-2 transition-colors duration-150 lg:h-5 lg:w-5 ${
+              index < value ? barColor.filled : barColor.empty
             } ${
               disabled
                 ? "cursor-not-allowed opacity-50"
@@ -86,14 +84,11 @@ const StatBar = ({
       <button
         onClick={handleIncrement}
         disabled={disabled || value >= maxValue}
-        className="flex h-6 w-6 lg:h-5 lg:w-5 shrink-0 items-center justify-center rounded-full bg-slate-600 text-white transition-colors hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-600 text-white transition-colors hover:bg-slate-500 disabled:cursor-not-allowed disabled:opacity-50 lg:h-5 lg:w-5"
         title={`Increase ${label}`}
       >
         <Plus className="h-3 w-3 lg:h-2.5 lg:w-2.5" />
       </button>
-      <span className="ml-2 text-xs text-slate-400">
-        {value}/{maxValue}
-      </span>
     </div>
   );
 };

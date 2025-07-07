@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure, observable } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  observable,
+} from "~/server/api/trpc";
 import { diceRollEmitter, type DiceRollEventData } from "~/server/api/events";
 import { getDiceRollOutcome } from "~/utils/dice";
 
@@ -238,10 +242,7 @@ export const gameRouter = createTRPCRouter({
         availableCharacters = await ctx.db.character.findMany({
           where: {
             userId: ctx.session.user.id,
-            OR: [
-              { gameId: null },
-              { gameId: { not: input.gameId } },
-            ],
+            OR: [{ gameId: null }, { gameId: { not: input.gameId } }],
           },
           orderBy: { createdAt: "desc" },
         });
@@ -253,7 +254,7 @@ export const gameRouter = createTRPCRouter({
             gameId: input.gameId,
           },
         });
-        
+
         canAddCharacter = !userCharacterInGame;
         availableCharacters = await ctx.db.character.findMany({
           where: {
@@ -306,7 +307,7 @@ export const gameRouter = createTRPCRouter({
       const hopeResult = Math.floor(Math.random() * 12) + 1;
       const fearResult = Math.floor(Math.random() * 12) + 1;
       const total = hopeResult + fearResult;
-      
+
       // Apply modifier if provided
       const modifier = input.modifier ?? 0;
       const finalTotal = total + modifier;
@@ -337,39 +338,41 @@ export const gameRouter = createTRPCRouter({
       const rollOutcome = getDiceRollOutcome(hopeResult, fearResult);
       if (rollOutcome === "with Fear") {
         // Silently add Fear to the game master (no await to avoid slowing down the roll)
-        void ctx.db.gameMasterFear.upsert({
-          where: {
-            gameId_userId: {
+        void ctx.db.gameMasterFear
+          .upsert({
+            where: {
+              gameId_userId: {
+                gameId: input.gameId,
+                userId: game.gameMasterId,
+              },
+            },
+            update: {
+              fearCount: {
+                increment: 1,
+              },
+            },
+            create: {
               gameId: input.gameId,
               userId: game.gameMasterId,
+              fearCount: 1,
             },
-          },
-          update: {
-            fearCount: {
-              increment: 1,
-            },
-          },
-          create: {
-            gameId: input.gameId,
-            userId: game.gameMasterId,
-            fearCount: 1,
-          },
-        }).then((fear) => {
-          // Cap at 12
-          if (fear.fearCount > 12) {
-            return ctx.db.gameMasterFear.update({
-              where: {
-                gameId_userId: {
-                  gameId: input.gameId,
-                  userId: game.gameMasterId,
+          })
+          .then((fear) => {
+            // Cap at 12
+            if (fear.fearCount > 12) {
+              return ctx.db.gameMasterFear.update({
+                where: {
+                  gameId_userId: {
+                    gameId: input.gameId,
+                    userId: game.gameMasterId,
+                  },
                 },
-              },
-              data: {
-                fearCount: 12,
-              },
-            });
-          }
-        });
+                data: {
+                  fearCount: 12,
+                },
+              });
+            }
+          });
       }
 
       // Emit event for real-time updates
@@ -428,7 +431,7 @@ export const gameRouter = createTRPCRouter({
       // Roll the damage dice
       const diceMax = parseInt(input.diceType.slice(1));
       const results: number[] = [];
-      
+
       for (let i = 0; i < input.quantity; i++) {
         results.push(Math.floor(Math.random() * diceMax) + 1);
       }
@@ -544,7 +547,9 @@ export const gameRouter = createTRPCRouter({
       });
 
       if (!game) {
-        throw new Error("You are not authorized to subscribe to rolls in this game");
+        throw new Error(
+          "You are not authorized to subscribe to rolls in this game",
+        );
       }
 
       return observable((emit) => {
@@ -580,10 +585,12 @@ export const gameRouter = createTRPCRouter({
 
   // Update Fear count for a game master
   updateFear: protectedProcedure
-    .input(z.object({ 
-      gameId: z.string(),
-      fearCount: z.number().int().min(0).max(12),
-    }))
+    .input(
+      z.object({
+        gameId: z.string(),
+        fearCount: z.number().int().min(0).max(12),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify the user is the game master of this game
       const game = await ctx.db.game.findUnique({

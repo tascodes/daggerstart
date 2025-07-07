@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import HealthBar from "./HealthBar";
 import HopeBar from "./HopeBar";
@@ -26,33 +26,71 @@ const HealthSection = ({
     character.severeDamageThreshold ?? "",
   );
 
-  // Optimistic state for health stats
-  const [optimisticHp, setOptimisticHp] = useState(character.hp);
-  const [optimisticStress, setOptimisticStress] = useState(character.stress);
-  const [optimisticHope, setOptimisticHope] = useState(character.hope);
-
-  // Update optimistic state when character data changes (e.g., from refetch)
-  useEffect(() => {
-    setOptimisticHp(character.hp);
-    setOptimisticStress(character.stress);
-    setOptimisticHope(character.hope);
-  }, [character.hp, character.stress, character.hope]);
+  const utils = api.useUtils();
 
   const updateHealthStat = api.character.updateHealthStat.useMutation({
-    onSuccess: () => {
-      onUpdate();
+    onMutate: async (variables) => {
+      await utils.character.getById.cancel({ id: character.id });
+      const previousCharacter = utils.character.getById.getData({
+        id: character.id,
+      });
+
+      if (previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          {
+            ...previousCharacter,
+            [variables.field]: variables.value,
+          },
+        );
+      }
+
+      return { previousCharacter };
     },
-    onError: () => {
-      // Revert optimistic update on error
-      setOptimisticHp(character.hp);
-      setOptimisticStress(character.stress);
-      setOptimisticHope(character.hope);
+    onError: (error, variables, context) => {
+      if (context?.previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          context.previousCharacter,
+        );
+      }
+    },
+    onSettled: () => {
+      void utils.character.getById.invalidate({ id: character.id });
+      onUpdate();
     },
   });
 
   const updateDamageThreshold = api.character.updateDamageThreshold.useMutation(
     {
-      onSuccess: () => {
+      onMutate: async (variables) => {
+        await utils.character.getById.cancel({ id: character.id });
+        const previousCharacter = utils.character.getById.getData({
+          id: character.id,
+        });
+
+        if (previousCharacter) {
+          utils.character.getById.setData(
+            { id: character.id },
+            {
+              ...previousCharacter,
+              [variables.field]: variables.value ?? null,
+            },
+          );
+        }
+
+        return { previousCharacter };
+      },
+      onError: (error, variables, context) => {
+        if (context?.previousCharacter) {
+          utils.character.getById.setData(
+            { id: character.id },
+            context.previousCharacter,
+          );
+        }
+      },
+      onSettled: () => {
+        void utils.character.getById.invalidate({ id: character.id });
         onUpdate();
       },
     },
@@ -62,16 +100,6 @@ const HealthSection = ({
     field: "hp" | "stress" | "hope",
     value: number,
   ) => {
-    // Immediately update the optimistic state
-    if (field === "hp") {
-      setOptimisticHp(value);
-    } else if (field === "stress") {
-      setOptimisticStress(value);
-    } else if (field === "hope") {
-      setOptimisticHope(value);
-    }
-
-    // Make the API call in the background
     updateHealthStat.mutate({
       id: character.id,
       field,
@@ -165,14 +193,14 @@ const HealthSection = ({
         <div className="space-y-4">
           <HealthBar
             label="HP"
-            value={optimisticHp}
+            value={character.hp}
             maxValue={12}
             onValueChange={(value) => handleHealthStatChange("hp", value)}
             disabled={!isOwner}
           />
           <HealthBar
             label="STRESS"
-            value={optimisticStress}
+            value={character.stress}
             maxValue={12}
             onValueChange={(value) => handleHealthStatChange("stress", value)}
             disabled={!isOwner}
@@ -182,7 +210,7 @@ const HealthSection = ({
 
       {/* Hope Section */}
       <HopeBar
-        value={optimisticHope}
+        value={character.hope}
         _class={character.class as ClassKeys}
         maxValue={6}
         onValueChange={(value) => handleHealthStatChange("hope", value)}

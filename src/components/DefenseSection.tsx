@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import ArmorBar from "./ArmorBar";
 import { Input } from "./ui/input";
@@ -22,42 +22,76 @@ const DefenseSection = ({
   isOwner,
   onUpdate,
 }: DefenseSectionProps) => {
-  // Optimistic state for defense stats
-  const [optimisticEvasion, setOptimisticEvasion] = useState(character.evasion);
-  const [optimisticArmor, setOptimisticArmor] = useState(character.armor);
   const evasionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Update optimistic state when character data changes
-  useEffect(() => {
-    setOptimisticEvasion(character.evasion);
-    setOptimisticArmor(character.armor);
-  }, [character.evasion, character.armor]);
+  const utils = api.useUtils();
 
   const updateHealthStat = api.character.updateHealthStat.useMutation({
-    onSuccess: () => {
-      onUpdate();
+    onMutate: async (variables) => {
+      await utils.character.getById.cancel({ id: character.id });
+      const previousCharacter = utils.character.getById.getData({
+        id: character.id,
+      });
+
+      if (previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          {
+            ...previousCharacter,
+            [variables.field]: variables.value,
+          },
+        );
+      }
+
+      return { previousCharacter };
     },
-    onError: () => {
-      // Revert optimistic update on error
-      setOptimisticArmor(character.armor);
+    onError: (error, variables, context) => {
+      if (context?.previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          context.previousCharacter,
+        );
+      }
+    },
+    onSettled: () => {
+      void utils.character.getById.invalidate({ id: character.id });
+      onUpdate();
     },
   });
 
   const updateDefenseStat = api.character.updateDefenseStat.useMutation({
-    onSuccess: () => {
-      onUpdate();
+    onMutate: async (variables) => {
+      await utils.character.getById.cancel({ id: character.id });
+      const previousCharacter = utils.character.getById.getData({
+        id: character.id,
+      });
+
+      if (previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          {
+            ...previousCharacter,
+            [variables.field]: variables.value,
+          },
+        );
+      }
+
+      return { previousCharacter };
     },
-    onError: () => {
-      // Revert optimistic update on error
-      setOptimisticEvasion(character.evasion);
+    onError: (error, variables, context) => {
+      if (context?.previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          context.previousCharacter,
+        );
+      }
+    },
+    onSettled: () => {
+      void utils.character.getById.invalidate({ id: character.id });
+      onUpdate();
     },
   });
 
   const handleArmorChange = (value: number) => {
-    // Immediately update the optimistic state
-    setOptimisticArmor(value);
-
-    // Make the API call in the background
     updateHealthStat.mutate({
       id: character.id,
       field: "armor",
@@ -78,9 +112,6 @@ const DefenseSection = ({
 
   const handleEvasionChange = (value: number) => {
     const clampedValue = Math.max(0, Math.min(20, value));
-
-    // Immediately update the optimistic state
-    setOptimisticEvasion(clampedValue);
 
     // Clear existing timer
     if (evasionDebounceTimer.current) {
@@ -114,7 +145,7 @@ const DefenseSection = ({
               type="number"
               min="0"
               max="50"
-              value={optimisticEvasion}
+              value={character.evasion}
               onChange={(e) =>
                 handleEvasionChange(parseInt(e.target.value) || 0)
               }
@@ -129,7 +160,7 @@ const DefenseSection = ({
 
         {/* Armor Bar */}
         <ArmorBar
-          value={optimisticArmor}
+          value={character.armor}
           maxValue={6}
           onValueChange={handleArmorChange}
           disabled={!isOwner}

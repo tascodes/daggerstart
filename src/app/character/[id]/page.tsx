@@ -9,10 +9,12 @@ interface CharacterDetailPageProps {
   }>;
 }
 
-export default async function CharacterDetailPage({ params }: CharacterDetailPageProps) {
+export default async function CharacterDetailPage({
+  params,
+}: CharacterDetailPageProps) {
   const session = await auth();
   const resolvedParams = await params;
-  
+
   if (!session) {
     redirect("/");
   }
@@ -20,10 +22,10 @@ export default async function CharacterDetailPage({ params }: CharacterDetailPag
   try {
     // Prefetch character data
     void api.character.getById.prefetch({ id: resolvedParams.id });
-    
+
     // Check if character exists by trying to fetch it
     const character = await api.character.getById({ id: resolvedParams.id });
-    
+
     if (!character) {
       notFound();
     }

@@ -29,12 +29,18 @@ interface DiceRollerProps {
   characterName?: string;
 }
 
-export default function DiceRoller({ gameId, characterId, characterName }: DiceRollerProps) {
+export default function DiceRoller({
+  gameId,
+  characterId,
+  characterName,
+}: DiceRollerProps) {
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [damageDialogOpen, setDamageDialogOpen] = useState(false);
   const [actionRollName, setActionRollName] = useState("");
   const [damageRollName, setDamageRollName] = useState("");
-  const [diceType, setDiceType] = useState<"d4" | "d6" | "d8" | "d10" | "d12" | "d20">("d6");
+  const [diceType, setDiceType] = useState<
+    "d4" | "d6" | "d8" | "d10" | "d12" | "d20"
+  >("d6");
   const [quantity, setQuantity] = useState(1);
 
   const rollActionDice = api.game.rollActionDice.useMutation({
@@ -53,7 +59,7 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
 
   const handleActionRoll = () => {
     if (!actionRollName.trim()) return;
-    
+
     rollActionDice.mutate({
       gameId,
       name: actionRollName.trim(),
@@ -63,7 +69,7 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
 
   const handleDamageRoll = () => {
     if (!damageRollName.trim()) return;
-    
+
     rollDamage.mutate({
       gameId,
       name: damageRollName.trim(),
@@ -74,26 +80,28 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-lg border border-slate-700 bg-slate-800">
-      <div className="flex items-center gap-2 mb-2">
-        <Dice6 className="w-5 h-5 text-sky-400" />
+    <div className="flex flex-col gap-3 rounded-lg border border-slate-700 bg-slate-800 p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Dice6 className="h-5 w-5 text-sky-400" />
         <h3 className="text-lg font-bold text-white">
           Dice Roller {characterName && `- ${characterName}`}
         </h3>
       </div>
-      
+
       <div className="flex gap-2">
         {/* Action Roll Button */}
         <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-yellow-600 text-white hover:bg-yellow-700 flex items-center gap-2">
-              <Zap className="w-4 h-4" />
+            <Button className="flex items-center gap-2 bg-yellow-600 text-white hover:bg-yellow-700">
+              <Zap className="h-4 w-4" />
               Action Roll
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogContent className="border-slate-700 bg-slate-800">
             <DialogHeader>
-              <DialogTitle className="text-white">Action Roll (2d12)</DialogTitle>
+              <DialogTitle className="text-white">
+                Action Roll (2d12)
+              </DialogTitle>
               <DialogDescription className="text-slate-400">
                 Roll Hope and Fear dice to determine your action&apos;s outcome.
               </DialogDescription>
@@ -136,12 +144,12 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
         {/* Damage Roll Button */}
         <Dialog open={damageDialogOpen} onOpenChange={setDamageDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-2">
-              <Dice1 className="w-4 h-4" />
+            <Button className="flex items-center gap-2 bg-red-600 text-white hover:bg-red-700">
+              <Dice1 className="h-4 w-4" />
               Damage Roll
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogContent className="border-slate-700 bg-slate-800">
             <DialogHeader>
               <DialogTitle className="text-white">Damage Roll</DialogTitle>
               <DialogDescription className="text-slate-400">
@@ -161,27 +169,62 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
                   className="border-slate-600 bg-slate-700 text-white"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="diceType" className="text-white">
                     Dice Type
                   </Label>
-                  <Select value={diceType} onValueChange={(value: "d4" | "d6" | "d8" | "d10" | "d12" | "d20") => setDiceType(value)}>
+                  <Select
+                    value={diceType}
+                    onValueChange={(
+                      value: "d4" | "d6" | "d8" | "d10" | "d12" | "d20",
+                    ) => setDiceType(value)}
+                  >
                     <SelectTrigger className="border-slate-600 bg-slate-700 text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="border-slate-600 bg-slate-700">
-                      <SelectItem value="d4" className="text-white focus:bg-slate-600">d4</SelectItem>
-                      <SelectItem value="d6" className="text-white focus:bg-slate-600">d6</SelectItem>
-                      <SelectItem value="d8" className="text-white focus:bg-slate-600">d8</SelectItem>
-                      <SelectItem value="d10" className="text-white focus:bg-slate-600">d10</SelectItem>
-                      <SelectItem value="d12" className="text-white focus:bg-slate-600">d12</SelectItem>
-                      <SelectItem value="d20" className="text-white focus:bg-slate-600">d20</SelectItem>
+                      <SelectItem
+                        value="d4"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d4
+                      </SelectItem>
+                      <SelectItem
+                        value="d6"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d6
+                      </SelectItem>
+                      <SelectItem
+                        value="d8"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d8
+                      </SelectItem>
+                      <SelectItem
+                        value="d10"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d10
+                      </SelectItem>
+                      <SelectItem
+                        value="d12"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d12
+                      </SelectItem>
+                      <SelectItem
+                        value="d20"
+                        className="text-white focus:bg-slate-600"
+                      >
+                        d20
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="quantity" className="text-white">
                     Quantity
@@ -213,7 +256,9 @@ export default function DiceRoller({ gameId, characterId, characterName }: DiceR
                 disabled={!damageRollName.trim() || rollDamage.isPending}
                 className="bg-red-600 text-white hover:bg-red-700"
               >
-                {rollDamage.isPending ? "Rolling..." : `Roll ${quantity}${diceType}`}
+                {rollDamage.isPending
+                  ? "Rolling..."
+                  : `Roll ${quantity}${diceType}`}
               </Button>
             </DialogFooter>
           </DialogContent>

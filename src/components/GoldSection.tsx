@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
@@ -19,41 +19,73 @@ interface GoldSectionProps {
 }
 
 const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
-  // Optimistic state for gold stats
-  const [optimisticHandfuls, setOptimisticHandfuls] = useState(
-    character.goldHandfuls,
-  );
-  const [optimisticBags, setOptimisticBags] = useState(character.goldBags);
-  const [optimisticChest, setOptimisticChest] = useState(character.goldChest);
-
   const handfulsDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const bagsDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Update optimistic state when character data changes
-  useEffect(() => {
-    setOptimisticHandfuls(character.goldHandfuls);
-    setOptimisticBags(character.goldBags);
-    setOptimisticChest(character.goldChest);
-  }, [character.goldHandfuls, character.goldBags, character.goldChest]);
+  const utils = api.useUtils();
 
   const updateGoldStat = api.character.updateGoldStat.useMutation({
-    onSuccess: () => {
-      onUpdate();
+    onMutate: async (variables) => {
+      await utils.character.getById.cancel({ id: character.id });
+      const previousCharacter = utils.character.getById.getData({
+        id: character.id,
+      });
+
+      if (previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          {
+            ...previousCharacter,
+            [variables.field]: variables.value,
+          },
+        );
+      }
+
+      return { previousCharacter };
     },
-    onError: () => {
-      // Revert optimistic update on error
-      setOptimisticHandfuls(character.goldHandfuls);
-      setOptimisticBags(character.goldBags);
+    onError: (error, variables, context) => {
+      if (context?.previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          context.previousCharacter,
+        );
+      }
+    },
+    onSettled: () => {
+      void utils.character.getById.invalidate({ id: character.id });
+      onUpdate();
     },
   });
 
   const updateGoldChest = api.character.updateGoldChest.useMutation({
-    onSuccess: () => {
-      onUpdate();
+    onMutate: async (variables) => {
+      await utils.character.getById.cancel({ id: character.id });
+      const previousCharacter = utils.character.getById.getData({
+        id: character.id,
+      });
+
+      if (previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          {
+            ...previousCharacter,
+            goldChest: variables.hasChest,
+          },
+        );
+      }
+
+      return { previousCharacter };
     },
-    onError: () => {
-      // Revert optimistic update on error
-      setOptimisticChest(character.goldChest);
+    onError: (error, variables, context) => {
+      if (context?.previousCharacter) {
+        utils.character.getById.setData(
+          { id: character.id },
+          context.previousCharacter,
+        );
+      }
+    },
+    onSettled: () => {
+      void utils.character.getById.invalidate({ id: character.id });
+      onUpdate();
     },
   });
 
@@ -71,9 +103,6 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
   const handleHandfulsChange = (value: number) => {
     const clampedValue = Math.max(0, Math.min(10, value));
 
-    // Immediately update the optimistic state
-    setOptimisticHandfuls(clampedValue);
-
     // Clear existing timer
     if (handfulsDebounceTimer.current) {
       clearTimeout(handfulsDebounceTimer.current);
@@ -90,9 +119,6 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
   const handleBagsChange = (value: number) => {
     const clampedValue = Math.max(0, Math.min(10, value));
 
-    // Immediately update the optimistic state
-    setOptimisticBags(clampedValue);
-
     // Clear existing timer
     if (bagsDebounceTimer.current) {
       clearTimeout(bagsDebounceTimer.current);
@@ -107,10 +133,6 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
   };
 
   const handleChestChange = (checked: boolean) => {
-    // Immediately update the optimistic state
-    setOptimisticChest(checked);
-
-    // Make the API call immediately for checkbox
     updateGoldChest.mutate({
       id: character.id,
       hasChest: checked,
@@ -134,7 +156,7 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
               type="number"
               min="0"
               max="10"
-              value={optimisticHandfuls}
+              value={character.goldHandfuls}
               onChange={(e) =>
                 handleHandfulsChange(parseInt(e.target.value) || 0)
               }
@@ -155,7 +177,7 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
               type="number"
               min="0"
               max="10"
-              value={optimisticBags}
+              value={character.goldBags}
               onChange={(e) => handleBagsChange(parseInt(e.target.value) || 0)}
               className="h-10 w-16 border-slate-600 bg-slate-700 text-center text-lg font-bold text-white"
             />
@@ -172,7 +194,7 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
           {isOwner ? (
             <div className="flex h-10 items-center justify-center">
               <Checkbox
-                checked={optimisticChest}
+                checked={character.goldChest}
                 onCheckedChange={handleChestChange}
                 className="h-6 w-6 border-slate-600 data-[state=checked]:border-yellow-600 data-[state=checked]:bg-yellow-600"
               />
