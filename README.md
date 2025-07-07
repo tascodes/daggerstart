@@ -49,7 +49,7 @@ A modern, web-based Virtual Tabletop (VTT) specifically designed for playing Dag
 
 ### Prerequisites
 
-- Node.js 18+ or Bun
+- [bun.sh](https://bun.sh/)
 - MySQL database
 - Discord OAuth application
 
