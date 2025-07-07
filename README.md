@@ -34,7 +34,7 @@ A modern, web-based Virtual Tabletop (VTT) specifically designed for playing Dag
 
 ### 🔄 Real-time Features
 
-- **Live Dice Rolls**: All players see dice rolls instantly via WebSocket subscriptions
+- **Live Dice Rolls**: All players see dice rolls instantly via SSE
 
 ## Tech Stack
 
