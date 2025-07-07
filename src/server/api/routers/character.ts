@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { classes } from "~/lib/srd/classes";
 
 const createCharacterSchema = z.object({
   name: z
@@ -69,6 +70,15 @@ export const characterRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createCharacterSchema)
     .mutation(async ({ ctx, input }) => {
+      // Find the class data to get HP and evasion values
+      const classData = classes.find(
+        (cls) => cls.name.toLowerCase() === input.class.toLowerCase(),
+      );
+      
+      // Parse HP and evasion from the class data (convert string to number)
+      const maxHp = classData ? parseInt(classData.hp, 10) : 5;
+      const evasion = classData ? parseInt(classData.evasion, 10) : 10;
+
       return ctx.db.character.create({
         data: {
           name: input.name,
@@ -80,6 +90,8 @@ export const characterRouter = createTRPCRouter({
           level: input.level,
           experience1: input.experience1,
           experience2: input.experience2,
+          maxHp: maxHp,
+          evasion: evasion,
           // Ability modifiers default to 0 via schema
           user: { connect: { id: ctx.session.user.id } },
         },

@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import HealthBar from "./HealthBar";
+import StressBar from "./StressBar";
 import HopeBar from "./HopeBar";
 import { Input } from "./ui/input";
 import type { Character } from "@prisma/client";
 import type { ClassKeys } from "~/app/pc/new/constants";
+import { classes } from "~/lib/srd/classes";
 
 interface HealthSectionProps {
   character: Character;
@@ -25,6 +27,21 @@ const HealthSection = ({
   const [severeThreshold, setSevereThreshold] = useState(
     character.severeDamageThreshold ?? "",
   );
+
+  // Helper function to derive maxHp from class data
+  const getMaxHp = (character: Character): number => {
+    // If character has maxHp in database, use it
+    if (character.maxHp && character.maxHp > 0) {
+      return character.maxHp;
+    }
+
+    // Otherwise derive from class data
+    const classData = classes.find(
+      (cls) => cls.name.toLowerCase() === character.class.toLowerCase(),
+    );
+
+    return classData ? parseInt(classData.hp, 10) : 5; // fallback to 5
+  };
 
   const utils = api.useUtils();
 
@@ -194,14 +211,14 @@ const HealthSection = ({
           <HealthBar
             label="HP"
             value={character.hp}
-            maxValue={12}
+            maxValue={getMaxHp(character)}
             onValueChange={(value) => handleHealthStatChange("hp", value)}
             disabled={!isOwner}
           />
-          <HealthBar
+          <StressBar
             label="STRESS"
             value={character.stress}
-            maxValue={12}
+            maxValue={6}
             onValueChange={(value) => handleHealthStatChange("stress", value)}
             disabled={!isOwner}
           />

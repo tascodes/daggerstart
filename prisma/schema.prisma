@@ -99,6 +99,7 @@ model Character {
 
     // Health and damage tracking
     hp                    Int     @default(0)
+    maxHp                 Int     @default(0)
     stress                Int     @default(0)
     hope                  Int     @default(0)
     majorDamageThreshold  String?

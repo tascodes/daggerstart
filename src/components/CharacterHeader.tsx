@@ -2,10 +2,13 @@
 
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import { User, Crown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { User, Crown, Info } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { subclassesByClass, type ClassKeys } from "~/app/pc/new/constants";
+import DomainBadge from "~/components/DomainBadge";
+import { classes } from "~/lib/srd/classes";
 
 interface CharacterHeaderProps {
   character: {
@@ -48,6 +51,25 @@ export default function CharacterHeader({
     }
     return subclass;
   };
+
+  // Helper function to get domains for a class
+  const getClassDomains = (characterClass: string): string[] => {
+    const classData = classes.find(
+      (cls) => cls.name.toLowerCase() === characterClass.toLowerCase(),
+    );
+    if (classData) {
+      return [classData.domain_1, classData.domain_2];
+    }
+    return [];
+  };
+
+  // Helper function to get class description
+  const getClassDescription = (characterClass: string): string => {
+    const classData = classes.find(
+      (cls) => cls.name.toLowerCase() === characterClass.toLowerCase(),
+    );
+    return classData?.description ?? "No description available.";
+  };
   return (
     <Card className="border-slate-700 bg-slate-800 shadow-lg">
       <CardContent className="p-6">
@@ -84,9 +106,22 @@ export default function CharacterHeader({
 
               <div>
                 <p className="text-sm text-slate-400">Class</p>
-                <p className="font-medium text-white capitalize">
-                  {character.class}
-                </p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="flex items-center gap-1 font-medium text-white capitalize hover:text-sky-400 transition-colors">
+                      {character.class}
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 bg-slate-800 border-slate-600 text-white">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-lg capitalize">{character.class}</h4>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        {getClassDescription(character.class)}
+                      </p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div>
@@ -94,6 +129,16 @@ export default function CharacterHeader({
                 <p className="font-medium text-white">
                   {getSubclassLabel(character.class, character.subclass)}
                 </p>
+              </div>
+            </div>
+
+            {/* Domain Badges */}
+            <div className="mt-4">
+              <p className="mb-2 text-sm text-slate-400">Domains</p>
+              <div className="flex gap-2">
+                {getClassDomains(character.class).map((domain) => (
+                  <DomainBadge key={domain} domain={domain} />
+                ))}
               </div>
             </div>
           </div>
