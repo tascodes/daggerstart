@@ -24,24 +24,28 @@ interface DiceRollEventData {
   } | null;
 }
 
-export interface DiceRollEvents {
+interface FearUpdateEventData {
+  gameId: string;
+  fearCount: number;
+  updatedAt: Date;
+}
+
+export interface GameEvents {
   newRoll: (data: DiceRollEventData) => void;
+  fearUpdate: (data: FearUpdateEventData) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-declare interface DiceRollEmitter {
-  on<U extends keyof DiceRollEvents>(
+declare interface GameEmitter {
+  on<U extends keyof GameEvents>(event: U, listener: GameEvents[U]): this;
+  emit<U extends keyof GameEvents>(
     event: U,
-    listener: DiceRollEvents[U],
-  ): this;
-  emit<U extends keyof DiceRollEvents>(
-    event: U,
-    ...args: Parameters<DiceRollEvents[U]>
+    ...args: Parameters<GameEvents[U]>
   ): boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-class DiceRollEmitter extends EventEmitter {
+class GameEmitter extends EventEmitter {
   constructor() {
     super();
     this.setMaxListeners(0); // Remove limit for concurrent connections
@@ -50,14 +54,16 @@ class DiceRollEmitter extends EventEmitter {
 
 // Global singleton instance
 const globalForEvents = globalThis as unknown as {
-  diceRollEmitter: DiceRollEmitter | undefined;
+  gameEmitter: GameEmitter | undefined;
 };
 
-export const diceRollEmitter =
-  globalForEvents.diceRollEmitter ?? new DiceRollEmitter();
+export const gameEmitter = globalForEvents.gameEmitter ?? new GameEmitter();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForEvents.diceRollEmitter = diceRollEmitter;
+  globalForEvents.gameEmitter = gameEmitter;
 }
 
-export type { DiceRollEventData };
+// Keep backward compatibility
+export const diceRollEmitter = gameEmitter;
+
+export type { DiceRollEventData, FearUpdateEventData };

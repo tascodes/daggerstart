@@ -12,6 +12,7 @@ import DefenseSection from "~/components/DefenseSection";
 import GoldSection from "~/components/GoldSection";
 import CharacterTabs from "~/components/CharacterTabs";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
+import FearBar from "~/components/FearBar";
 import { api } from "~/trpc/react";
 
 interface CharacterDetailClientProps {
@@ -25,6 +26,26 @@ export default function CharacterDetailClient({
   const { data: character, refetch } = api.character.getById.useQuery({
     id: characterId,
   });
+
+  // Get Fear data if character is in a game
+  const { data: fearCount } = api.game.getFear.useQuery(
+    { gameId: character?.gameId! },
+    { enabled: !!character?.gameId },
+  );
+
+  const utils = api.useUtils();
+
+  // Subscribe to Fear updates
+  api.game.onFearUpdate.useSubscription(
+    { gameId: character?.gameId! },
+    {
+      enabled: !!character?.gameId && !!session,
+      onData: () => {
+        // Trigger a refetch when Fear updates occur
+        void utils.game.getFear.invalidate({ gameId: character?.gameId! });
+      },
+    },
+  );
 
   if (!character) {
     return (
@@ -106,6 +127,19 @@ export default function CharacterDetailClient({
             onUpdate={() => void refetch()}
           />
         </div>
+
+        {/* Fear Section - Show GM's Fear if character is in a game */}
+        {character.gameId && (
+          <div className="mb-8 w-fit rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+            <h3 className="mb-4 text-lg font-bold text-white">Fear</h3>
+            <FearBar
+              value={fearCount ?? 0}
+              maxValue={12}
+              onValueChange={() => {}} // Read-only, no edit functionality
+              readonly={true}
+            />
+          </div>
+        )}
 
         {/* Character Details Grid */}
         <div className="grid gap-8 lg:grid-cols-2">

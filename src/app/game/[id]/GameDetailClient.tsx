@@ -66,6 +66,18 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
     },
   });
 
+  // Subscribe to Fear updates
+  api.game.onFearUpdate.useSubscription(
+    { gameId },
+    {
+      enabled: !!session?.user.id && !!gameId,
+      onData: () => {
+        // Trigger a refetch when Fear updates occur
+        void utils.game.getFear.invalidate({ gameId });
+      },
+    },
+  );
+
   const addCharacterToGame = api.game.addCharacterToGame.useMutation({
     onSuccess: () => {
       setJoinDialogOpen(false);

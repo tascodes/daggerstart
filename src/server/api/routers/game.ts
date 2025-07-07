@@ -5,7 +5,11 @@ import {
   protectedProcedure,
   observable,
 } from "~/server/api/trpc";
-import { diceRollEmitter, type DiceRollEventData } from "~/server/api/events";
+import {
+  gameEmitter,
+  type DiceRollEventData,
+  type FearUpdateEventData,
+} from "~/server/api/events";
 import { getDiceRollOutcome } from "~/utils/dice";
 
 const createGameSchema = z.object({
@@ -358,25 +362,44 @@ export const gameRouter = createTRPCRouter({
             },
           })
           .then((fear) => {
+            let finalFearCount = fear.fearCount;
+
             // Cap at 12
             if (fear.fearCount > 12) {
-              return ctx.db.gameMasterFear.update({
-                where: {
-                  gameId_userId: {
-                    gameId: input.gameId,
-                    userId: game.gameMasterId,
+              finalFearCount = 12;
+              return ctx.db.gameMasterFear
+                .update({
+                  where: {
+                    gameId_userId: {
+                      gameId: input.gameId,
+                      userId: game.gameMasterId,
+                    },
                   },
-                },
-                data: {
-                  fearCount: 12,
-                },
+                  data: {
+                    fearCount: 12,
+                  },
+                })
+                .then(() => {
+                  // Emit event for real-time updates
+                  gameEmitter.emit("fearUpdate", {
+                    gameId: input.gameId,
+                    fearCount: 12,
+                    updatedAt: new Date(),
+                  });
+                });
+            } else {
+              // Emit event for real-time updates
+              gameEmitter.emit("fearUpdate", {
+                gameId: input.gameId,
+                fearCount: finalFearCount,
+                updatedAt: new Date(),
               });
             }
           });
       }
 
       // Emit event for real-time updates
-      diceRollEmitter.emit("newRoll", {
+      gameEmitter.emit("newRoll", {
         id: diceRoll.id,
         gameId: input.gameId,
         name: diceRoll.name,
@@ -458,7 +481,7 @@ export const gameRouter = createTRPCRouter({
       });
 
       // Emit event for real-time updates
-      diceRollEmitter.emit("newRoll", {
+      gameEmitter.emit("newRoll", {
         id: diceRoll.id,
         gameId: input.gameId,
         name: diceRoll.name,
@@ -559,10 +582,10 @@ export const gameRouter = createTRPCRouter({
           }
         };
 
-        diceRollEmitter.on("newRoll", onNewRoll);
+        gameEmitter.on("newRoll", onNewRoll);
 
         return () => {
-          diceRollEmitter.off("newRoll", onNewRoll);
+          gameEmitter.off("newRoll", onNewRoll);
         };
       });
     }),
@@ -602,7 +625,7 @@ export const gameRouter = createTRPCRouter({
         throw new Error("You are not the game master of this game");
       }
 
-      return ctx.db.gameMasterFear.upsert({
+      const result = await ctx.db.gameMasterFear.upsert({
         where: {
           gameId_userId: {
             gameId: input.gameId,
@@ -618,6 +641,15 @@ export const gameRouter = createTRPCRouter({
           fearCount: input.fearCount,
         },
       });
+
+      // Emit event for real-time updates
+      gameEmitter.emit("fearUpdate", {
+        gameId: input.gameId,
+        fearCount: input.fearCount,
+        updatedAt: new Date(),
+      });
+
+      return result;
     }),
 
   // Add Fear when a "With Fear" roll occurs
@@ -646,7 +678,7 @@ export const gameRouter = createTRPCRouter({
 
       const newFearCount = Math.min(12, (currentFear?.fearCount ?? 0) + 1);
 
-      return ctx.db.gameMasterFear.upsert({
+      const result = await ctx.db.gameMasterFear.upsert({
         where: {
           gameId_userId: {
             gameId: input.gameId,
@@ -661,6 +693,51 @@ export const gameRouter = createTRPCRouter({
           userId: game.gameMasterId,
           fearCount: newFearCount,
         },
+      });
+
+      // Emit event for real-time updates
+      gameEmitter.emit("fearUpdate", {
+        gameId: input.gameId,
+        fearCount: newFearCount,
+        updatedAt: new Date(),
+      });
+
+      return result;
+    }),
+
+  // Subscribe to Fear updates for a specific game
+  onFearUpdate: protectedProcedure
+    .input(z.object({ gameId: z.string() }))
+    .subscription(async ({ ctx, input }) => {
+      // Verify user is in the game
+      const game = await ctx.db.game.findFirst({
+        where: {
+          id: input.gameId,
+          OR: [
+            { gameMasterId: ctx.session.user.id },
+            { characters: { some: { userId: ctx.session.user.id } } },
+          ],
+        },
+      });
+
+      if (!game) {
+        throw new Error(
+          "You are not authorized to subscribe to fear updates in this game",
+        );
+      }
+
+      return observable<FearUpdateEventData>((emit) => {
+        const onFearUpdate = (data: FearUpdateEventData) => {
+          if (data.gameId === input.gameId) {
+            emit.next(data);
+          }
+        };
+
+        gameEmitter.on("fearUpdate", onFearUpdate);
+
+        return () => {
+          gameEmitter.off("fearUpdate", onFearUpdate);
+        };
       });
     }),
 });
