@@ -27,6 +27,7 @@ import Image from "next/image";
 import DiceRoller from "~/components/DiceRoller";
 import DiceRollFeed from "~/components/DiceRollFeed";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
+import FearBar from "~/components/FearBar";
 
 interface GameDetailClientProps {
   gameId: string;
@@ -41,6 +42,19 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const { data: availableData } = api.game.getAvailableCharacters.useQuery({
     gameId,
+  });
+
+  // Get Fear data for game master
+  const { data: fearCount } = api.game.getFear.useQuery(
+    { gameId },
+    { enabled: !!session?.user.id && !!gameId },
+  );
+
+  const utils = api.useUtils();
+  const updateFear = api.game.updateFear.useMutation({
+    onSuccess: () => {
+      void utils.game.getFear.invalidate({ gameId });
+    },
   });
 
   const addCharacterToGame = api.game.addCharacterToGame.useMutation({
@@ -68,6 +82,13 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const handleLeaveGame = (characterId: string) => {
     removeCharacterFromGame.mutate({ characterId });
+  };
+
+  const handleFearChange = (newFear: number) => {
+    updateFear.mutate({
+      gameId,
+      fearCount: newFear,
+    });
   };
 
   if (!game) {
@@ -237,6 +258,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 </div>
               </div>
             </div>
+
           </div>
 
           {/* Characters Section */}
@@ -286,9 +308,9 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                       >
                         <div className="mb-3 flex items-start justify-between">
                           <div>
-                            <Link 
+                            <Link
                               href={`/character/${character.id}`}
-                              className="mb-1 text-lg font-bold text-white hover:text-sky-400 transition-colors"
+                              className="mb-1 text-lg font-bold text-white transition-colors hover:text-sky-400"
                             >
                               {character.name}
                             </Link>
@@ -360,6 +382,22 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
           </div>
         </div>
 
+        {/* Fear Section - Only show to game master */}
+        {isGameMaster && (
+          <div className="mt-8 w-fit rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+            <h3 className="mb-4 text-lg font-bold text-white">Fear</h3>
+            <FearBar
+              value={fearCount ?? 0}
+              maxValue={12}
+              onValueChange={handleFearChange}
+              disabled={updateFear.isPending}
+            />
+            <p className="mt-2 text-xs text-slate-400">
+              Increases when players roll with Fear
+            </p>
+          </div>
+        )}
+
         {/* Dice Rolling Section */}
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
           {/* Dice Roller */}
@@ -392,7 +430,10 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
         </div>
 
         {/* Floating Dice Rolls */}
-        <FloatingDiceRolls gameId={gameId} />
+        <FloatingDiceRolls 
+          gameId={gameId} 
+          onFearRoll={isGameMaster ? () => void utils.game.getFear.invalidate({ gameId }) : undefined}
+        />
       </div>
     </div>
   );

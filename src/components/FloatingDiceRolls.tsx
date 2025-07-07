@@ -9,6 +9,8 @@ import {
   Zap,
   Sword,
   Trash2,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -25,9 +27,11 @@ import { api } from "~/trpc/react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import RollOutcomeBadge from "~/components/RollOutcomeBadge";
+import { getDiceRollOutcome } from "~/utils/dice";
 
 interface FloatingDiceRollsProps {
   gameId?: string;
+  onFearRoll?: () => void;
 }
 
 interface DiceRoll {
@@ -52,14 +56,16 @@ interface NewRollNotification {
   isRemoving?: boolean;
 }
 
-const FloatingDiceRolls = ({ gameId }: FloatingDiceRollsProps) => {
+const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [newRollNotifications, setNewRollNotifications] = useState<
     NewRollNotification[]
   >([]);
   const { data: session } = useSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevRollsRef = useRef<DiceRoll[]>([]);
+  const hasInitializedRef = useRef(false);
 
   const {
     data: rolls,
@@ -128,29 +134,51 @@ const FloatingDiceRolls = ({ gameId }: FloatingDiceRollsProps) => {
 
   // Detect new rolls and create notifications
   useEffect(() => {
-    if (!rolls || isExpanded) return;
+    if (!rolls) return;
 
     const prevRollIds = new Set(prevRollsRef.current.map((roll) => roll.id));
 
     // Find new rolls (in current but not in previous)
     const newRolls = rolls.filter((roll) => !prevRollIds.has(roll.id));
 
-    if (newRolls.length > 0 && prevRollsRef.current.length > 0) {
-      // Only show notifications if we had previous rolls (avoid showing on initial load)
+    // Show notifications for new rolls, but only after the component has been initialized
+    // This prevents notifications from showing for existing rolls on initial load
+    if (newRolls.length > 0 && hasInitializedRef.current) {
       newRolls.forEach((roll) => {
-        const notification: NewRollNotification = {
-          id: `notification-${roll.id}`,
-          roll: roll as DiceRoll,
-          timestamp: Date.now(),
-        };
+        // Only show notifications if enabled
+        if (notificationsEnabled) {
+          const notification: NewRollNotification = {
+            id: `notification-${roll.id}`,
+            roll: roll as DiceRoll,
+            timestamp: Date.now(),
+          };
 
-        setNewRollNotifications((prev) => [...prev, notification]);
+          setNewRollNotifications((prev) => [...prev, notification]);
 
-        // Auto-remove after 10 seconds
-        setTimeout(() => {
-          removeNotification(notification.id);
-        }, 10000);
+          // Auto-remove after 10 seconds
+          setTimeout(() => {
+            removeNotification(notification.id);
+          }, 10000);
+        }
+
+        // Check if this is a "With Fear" roll and trigger callback (always check, regardless of notifications)
+        if (
+          roll.rollType === "Action" &&
+          roll.hopeResult &&
+          roll.fearResult &&
+          onFearRoll
+        ) {
+          const outcome = getDiceRollOutcome(roll.hopeResult, roll.fearResult);
+          if (outcome === "with Fear") {
+            onFearRoll();
+          }
+        }
       });
+    }
+
+    // Mark as initialized after the first load
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
     }
 
     // Update previous rolls reference
@@ -249,13 +277,14 @@ const FloatingDiceRolls = ({ gameId }: FloatingDiceRollsProps) => {
                           <span className="font-bold text-sky-400">
                             {notification.roll.finalTotal}
                           </span>
-                          <RollOutcomeBadge
-                            hopeResult={notification.roll.hopeResult!}
-                            fearResult={notification.roll.fearResult!}
-                            size="sm"
-                          />
                         </>
                       )}
+                    {/* Always display the RollOutcomeBadge for Action rolls */}
+                    <RollOutcomeBadge
+                      hopeResult={notification.roll.hopeResult!}
+                      fearResult={notification.roll.fearResult!}
+                      size="sm"
+                    />
                   </div>
                 </div>
               </div>
@@ -292,44 +321,67 @@ const FloatingDiceRolls = ({ gameId }: FloatingDiceRollsProps) => {
                 </span>
               )}
             </div>
-            {isGameMaster && rolls && rolls.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-400 hover:bg-red-950 hover:text-red-300"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="border-slate-700 bg-slate-800">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-white">
-                      Clear Dice Roll History
-                    </AlertDialogTitle>
-                    <AlertDialogDescription className="text-slate-400">
-                      Are you sure you want to permanently delete all dice roll
-                      history for this game? This action cannot be undone and
-                      will remove all {rolls.length} roll
-                      {rolls.length !== 1 ? "s" : ""} from the record.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleClearRolls}
-                      disabled={clearRolls.isPending}
-                      className="bg-red-600 text-white hover:bg-red-700"
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                className={`text-xs ${
+                  notificationsEnabled
+                    ? "text-sky-400 hover:bg-sky-950 hover:text-sky-300"
+                    : "text-slate-400 hover:bg-slate-700 hover:text-slate-300"
+                }`}
+                title={
+                  notificationsEnabled
+                    ? "Disable notifications"
+                    : "Enable notifications"
+                }
+              >
+                {notificationsEnabled ? (
+                  <Bell className="h-3 w-3" />
+                ) : (
+                  <BellOff className="h-3 w-3" />
+                )}
+              </Button>
+              {isGameMaster && rolls && rolls.length > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400 hover:bg-red-950 hover:text-red-300"
                     >
-                      {clearRolls.isPending ? "Clearing..." : "Clear History"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="border-slate-700 bg-slate-800">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">
+                        Clear Dice Roll History
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-slate-400">
+                        Are you sure you want to permanently delete all dice
+                        roll history for this game? This action cannot be undone
+                        and will remove all {rolls.length} roll
+                        {rolls.length !== 1 ? "s" : ""} from the record.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleClearRolls}
+                        disabled={clearRolls.isPending}
+                        className="bg-red-600 text-white hover:bg-red-700"
+                      >
+                        {clearRolls.isPending ? "Clearing..." : "Clear History"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
 
           {/* Content */}
@@ -423,13 +475,14 @@ const FloatingDiceRolls = ({ gameId }: FloatingDiceRollsProps) => {
                                 <span className="font-bold text-sky-400">
                                   {roll.finalTotal}
                                 </span>
-                                <RollOutcomeBadge
-                                  hopeResult={roll.hopeResult!}
-                                  fearResult={roll.fearResult!}
-                                  size="sm"
-                                />
                               </>
                             )}
+                            {/* Always display the RollOutcomeBadge for Action rolls */}
+                            <RollOutcomeBadge
+                              hopeResult={roll.hopeResult!}
+                              fearResult={roll.fearResult!}
+                              size="sm"
+                            />
                           </div>
                         </div>
                       ) : (

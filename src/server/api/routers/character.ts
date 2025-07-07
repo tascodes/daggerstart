@@ -36,6 +36,35 @@ const updateAbilitiesSchema = z.object({
   knowledgeModifier: z.number().int().min(-10).max(10),
 });
 
+const updateHealthStatSchema = z.object({
+  id: z.string(),
+  field: z.enum(['hp', 'stress', 'hope', 'armor']),
+  value: z.number().int().min(0).max(100),
+});
+
+const updateDefenseStatSchema = z.object({
+  id: z.string(),
+  field: z.enum(['evasion']),
+  value: z.number().int().min(0).max(50),
+});
+
+const updateGoldStatSchema = z.object({
+  id: z.string(),
+  field: z.enum(['goldHandfuls', 'goldBags']),
+  value: z.number().int().min(0).max(10),
+});
+
+const updateGoldChestSchema = z.object({
+  id: z.string(),
+  hasChest: z.boolean(),
+});
+
+const updateDamageThresholdSchema = z.object({
+  id: z.string(),
+  field: z.enum(['majorDamageThreshold', 'severeDamageThreshold']),
+  value: z.string().optional(),
+});
+
 export const characterRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createCharacterSchema)
@@ -130,6 +159,121 @@ export const characterRouter = createTRPCRouter({
           presenceModifier: input.presenceModifier,
           knowledgeModifier: input.knowledgeModifier,
         },
+      });
+    }),
+
+  updateHealthStat: protectedProcedure
+    .input(updateHealthStatSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { [input.field]: input.value },
+      });
+    }),
+
+  updateDefenseStat: protectedProcedure
+    .input(updateDefenseStatSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { [input.field]: input.value },
+      });
+    }),
+
+  updateGoldStat: protectedProcedure
+    .input(updateGoldStatSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { [input.field]: input.value },
+      });
+    }),
+
+  updateGoldChest: protectedProcedure
+    .input(updateGoldChestSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { goldChest: input.hasChest },
+      });
+    }),
+
+  updateDamageThreshold: protectedProcedure
+    .input(updateDamageThresholdSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { [input.field]: input.value },
       });
     }),
 

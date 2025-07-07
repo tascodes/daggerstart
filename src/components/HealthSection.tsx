@@ -1,0 +1,195 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { api } from "~/trpc/react";
+import HealthBar from "./HealthBar";
+import HopeBar from "./HopeBar";
+import { Input } from "./ui/input";
+import type { Character } from "@prisma/client";
+import type { ClassKeys } from "~/app/pc/new/constants";
+
+interface HealthSectionProps {
+  character: Character;
+  isOwner: boolean;
+  onUpdate: () => void;
+}
+
+const HealthSection = ({
+  character,
+  isOwner,
+  onUpdate,
+}: HealthSectionProps) => {
+  const [majorThreshold, setMajorThreshold] = useState(
+    character.majorDamageThreshold ?? "",
+  );
+  const [severeThreshold, setSevereThreshold] = useState(
+    character.severeDamageThreshold ?? "",
+  );
+
+  // Optimistic state for health stats
+  const [optimisticHp, setOptimisticHp] = useState(character.hp);
+  const [optimisticStress, setOptimisticStress] = useState(character.stress);
+  const [optimisticHope, setOptimisticHope] = useState(character.hope);
+
+  // Update optimistic state when character data changes (e.g., from refetch)
+  useEffect(() => {
+    setOptimisticHp(character.hp);
+    setOptimisticStress(character.stress);
+    setOptimisticHope(character.hope);
+  }, [character.hp, character.stress, character.hope]);
+
+  const updateHealthStat = api.character.updateHealthStat.useMutation({
+    onSuccess: () => {
+      onUpdate();
+    },
+    onError: () => {
+      // Revert optimistic update on error
+      setOptimisticHp(character.hp);
+      setOptimisticStress(character.stress);
+      setOptimisticHope(character.hope);
+    },
+  });
+
+  const updateDamageThreshold = api.character.updateDamageThreshold.useMutation(
+    {
+      onSuccess: () => {
+        onUpdate();
+      },
+    },
+  );
+
+  const handleHealthStatChange = (
+    field: "hp" | "stress" | "hope",
+    value: number,
+  ) => {
+    // Immediately update the optimistic state
+    if (field === "hp") {
+      setOptimisticHp(value);
+    } else if (field === "stress") {
+      setOptimisticStress(value);
+    } else if (field === "hope") {
+      setOptimisticHope(value);
+    }
+
+    // Make the API call in the background
+    updateHealthStat.mutate({
+      id: character.id,
+      field,
+      value,
+    });
+  };
+
+  const handleThresholdChange = (
+    field: "majorDamageThreshold" | "severeDamageThreshold",
+    value: string,
+  ) => {
+    updateDamageThreshold.mutate({
+      id: character.id,
+      field,
+      value: value || undefined,
+    });
+  };
+
+  const handleMajorThresholdBlur = () => {
+    if (majorThreshold !== (character.majorDamageThreshold ?? "")) {
+      handleThresholdChange("majorDamageThreshold", majorThreshold);
+    }
+  };
+
+  const handleSevereThresholdBlur = () => {
+    if (severeThreshold !== (character.severeDamageThreshold ?? "")) {
+      handleThresholdChange("severeDamageThreshold", severeThreshold);
+    }
+  };
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[60%_calc(37%+2px)]">
+      {/* Damage & Health Section */}
+      <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+        <div className="mb-4 flex items-center gap-4">
+          <div className="clip-path-arrow bg-slate-600 px-4 py-2 text-lg font-bold text-white">
+            DAMAGE &amp; HEALTH
+          </div>
+        </div>
+        <p className="mb-6 text-sm text-slate-400">
+          Add your current level to your damage thresholds.
+        </p>
+
+        {/* Damage Thresholds */}
+        <div className="mb-6 grid grid-cols-3 gap-4">
+          <div className="bg-slate-600 p-3 text-center text-white">
+            <div className="font-bold">MINOR DAMAGE</div>
+            <div className="mt-1 text-sm">Mark 1 HP</div>
+          </div>
+          <div className="relative bg-slate-600 p-3 text-center text-white">
+            <div className="font-bold">MAJOR DAMAGE</div>
+            <div className="mt-1 text-sm">Mark 2 HP</div>
+            {isOwner && (
+              <Input
+                className="mt-2 h-8 border-slate-600 bg-slate-700 text-center text-sm text-white"
+                placeholder="Threshold"
+                value={majorThreshold}
+                onChange={(e) => setMajorThreshold(e.target.value)}
+                onBlur={handleMajorThresholdBlur}
+                disabled={updateDamageThreshold.isPending}
+              />
+            )}
+            {!isOwner && character.majorDamageThreshold && (
+              <div className="mt-2 text-sm font-medium text-yellow-400">
+                {character.majorDamageThreshold}
+              </div>
+            )}
+          </div>
+          <div className="bg-slate-600 p-3 text-center text-white">
+            <div className="font-bold">SEVERE DAMAGE</div>
+            <div className="mt-1 text-sm">Mark 3 HP</div>
+            {isOwner && (
+              <Input
+                className="mt-2 h-8 border-slate-600 bg-slate-700 text-center text-sm text-white"
+                placeholder="Threshold"
+                value={severeThreshold}
+                onChange={(e) => setSevereThreshold(e.target.value)}
+                onBlur={handleSevereThresholdBlur}
+                disabled={updateDamageThreshold.isPending}
+              />
+            )}
+            {!isOwner && character.severeDamageThreshold && (
+              <div className="mt-2 text-sm font-medium text-yellow-400">
+                {character.severeDamageThreshold}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Health Bars */}
+        <div className="space-y-4">
+          <HealthBar
+            label="HP"
+            value={optimisticHp}
+            maxValue={12}
+            onValueChange={(value) => handleHealthStatChange("hp", value)}
+            disabled={!isOwner}
+          />
+          <HealthBar
+            label="STRESS"
+            value={optimisticStress}
+            maxValue={12}
+            onValueChange={(value) => handleHealthStatChange("stress", value)}
+            disabled={!isOwner}
+          />
+        </div>
+      </div>
+
+      {/* Hope Section */}
+      <HopeBar
+        value={optimisticHope}
+        _class={character.class as ClassKeys}
+        maxValue={6}
+        onValueChange={(value) => handleHealthStatChange("hope", value)}
+        disabled={!isOwner}
+      />
+    </div>
+  );
+};
+
+export default HealthSection;

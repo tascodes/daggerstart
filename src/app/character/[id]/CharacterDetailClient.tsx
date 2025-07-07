@@ -7,6 +7,10 @@ import { ArrowLeft } from "lucide-react";
 import CharacterHeader from "~/components/CharacterHeader";
 import CharacterExperiences from "~/components/CharacterExperiences";
 import CharacterAbilities from "~/components/CharacterAbilities";
+import HealthSection from "~/components/HealthSection";
+import DefenseSection from "~/components/DefenseSection";
+import GoldSection from "~/components/GoldSection";
+import CharacterTabs from "~/components/CharacterTabs";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 import { api } from "~/trpc/react";
 
@@ -54,12 +58,44 @@ export default function CharacterDetailClient({
           <CharacterHeader character={character} isOwner={isOwner} />
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="mb-8">
+          <CharacterTabs characterId={characterId} activeTab="details" />
+        </div>
+
         {/* Abilities Section */}
         <div className="mb-8">
           <CharacterAbilities 
             character={character} 
             isOwner={isOwner}
             game={character.game}
+            onUpdate={() => void refetch()}
+          />
+        </div>
+
+        {/* Health Section */}
+        <div className="mb-8">
+          <HealthSection 
+            character={character} 
+            isOwner={isOwner}
+            onUpdate={() => void refetch()}
+          />
+        </div>
+
+        {/* Defense Section */}
+        <div className="mb-8">
+          <DefenseSection 
+            character={character} 
+            isOwner={isOwner}
+            onUpdate={() => void refetch()}
+          />
+        </div>
+
+        {/* Gold Section */}
+        <div className="mb-8">
+          <GoldSection 
+            character={character} 
+            isOwner={isOwner}
             onUpdate={() => void refetch()}
           />
         </div>

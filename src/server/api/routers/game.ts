@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure, observable } from "~/server/api/trpc";
 import { diceRollEmitter, type DiceRollEventData } from "~/server/api/events";
+import { getDiceRollOutcome } from "~/utils/dice";
 
 const createGameSchema = z.object({
   name: z
@@ -332,6 +333,45 @@ export const gameRouter = createTRPCRouter({
         },
       });
 
+      // Check if this is a "With Fear" roll and add Fear for game master
+      const rollOutcome = getDiceRollOutcome(hopeResult, fearResult);
+      if (rollOutcome === "with Fear") {
+        // Silently add Fear to the game master (no await to avoid slowing down the roll)
+        void ctx.db.gameMasterFear.upsert({
+          where: {
+            gameId_userId: {
+              gameId: input.gameId,
+              userId: game.gameMasterId,
+            },
+          },
+          update: {
+            fearCount: {
+              increment: 1,
+            },
+          },
+          create: {
+            gameId: input.gameId,
+            userId: game.gameMasterId,
+            fearCount: 1,
+          },
+        }).then((fear) => {
+          // Cap at 12
+          if (fear.fearCount > 12) {
+            return ctx.db.gameMasterFear.update({
+              where: {
+                gameId_userId: {
+                  gameId: input.gameId,
+                  userId: game.gameMasterId,
+                },
+              },
+              data: {
+                fearCount: 12,
+              },
+            });
+          }
+        });
+      }
+
       // Emit event for real-time updates
       diceRollEmitter.emit("newRoll", {
         id: diceRoll.id,
@@ -519,6 +559,101 @@ export const gameRouter = createTRPCRouter({
         return () => {
           diceRollEmitter.off("newRoll", onNewRoll);
         };
+      });
+    }),
+
+  // Get Fear count for a game master in a specific game
+  getFear: protectedProcedure
+    .input(z.object({ gameId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const fear = await ctx.db.gameMasterFear.findUnique({
+        where: {
+          gameId_userId: {
+            gameId: input.gameId,
+            userId: ctx.session.user.id,
+          },
+        },
+      });
+
+      return fear?.fearCount ?? 0;
+    }),
+
+  // Update Fear count for a game master
+  updateFear: protectedProcedure
+    .input(z.object({ 
+      gameId: z.string(),
+      fearCount: z.number().int().min(0).max(12),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify the user is the game master of this game
+      const game = await ctx.db.game.findUnique({
+        where: { id: input.gameId },
+        select: { gameMasterId: true },
+      });
+
+      if (!game || game.gameMasterId !== ctx.session.user.id) {
+        throw new Error("You are not the game master of this game");
+      }
+
+      return ctx.db.gameMasterFear.upsert({
+        where: {
+          gameId_userId: {
+            gameId: input.gameId,
+            userId: ctx.session.user.id,
+          },
+        },
+        update: {
+          fearCount: input.fearCount,
+        },
+        create: {
+          gameId: input.gameId,
+          userId: ctx.session.user.id,
+          fearCount: input.fearCount,
+        },
+      });
+    }),
+
+  // Add Fear when a "With Fear" roll occurs
+  addFear: protectedProcedure
+    .input(z.object({ gameId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Get the game to find the game master
+      const game = await ctx.db.game.findUnique({
+        where: { id: input.gameId },
+        select: { gameMasterId: true },
+      });
+
+      if (!game) {
+        throw new Error("Game not found");
+      }
+
+      // Get current fear count
+      const currentFear = await ctx.db.gameMasterFear.findUnique({
+        where: {
+          gameId_userId: {
+            gameId: input.gameId,
+            userId: game.gameMasterId,
+          },
+        },
+      });
+
+      const newFearCount = Math.min(12, (currentFear?.fearCount ?? 0) + 1);
+
+      return ctx.db.gameMasterFear.upsert({
+        where: {
+          gameId_userId: {
+            gameId: input.gameId,
+            userId: game.gameMasterId,
+          },
+        },
+        update: {
+          fearCount: newFearCount,
+        },
+        create: {
+          gameId: input.gameId,
+          userId: game.gameMasterId,
+          fearCount: newFearCount,
+        },
       });
     }),
 });

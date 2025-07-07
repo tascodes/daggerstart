@@ -191,13 +191,14 @@ export default function DiceRollFeed({
                           <span className="text-xl font-bold text-sky-400">
                             {roll.finalTotal}
                           </span>
-                          <RollOutcomeBadge
-                            hopeResult={roll.hopeResult!}
-                            fearResult={roll.fearResult!}
-                            size="md"
-                          />
                         </>
                       )}
+                      {/* Always display the RollOutcomeBadge for Action rolls */}
+                      <RollOutcomeBadge
+                        hopeResult={roll.hopeResult!}
+                        fearResult={roll.fearResult!}
+                        size="md"
+                      />
                     </div>
                   </div>
                 </div>
