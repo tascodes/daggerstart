@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 
 const DomainColors = {
   Arcana: "bg-purple-600 text-white border-purple-700",
-  Codex: "bg-blue-600 text-white border-blue-700", 
+  Codex: "bg-blue-600 text-white border-blue-700",
   Grace: "bg-pink-600 text-white border-pink-700",
   Blade: "bg-red-600 text-white border-red-700",
   Midnight: "bg-black text-white border-gray-700",
@@ -24,15 +24,12 @@ interface DomainBadgeProps {
 
 const DomainBadge = ({ domain, className }: DomainBadgeProps) => {
   const domainKey = domain as DomainName;
-  const colorClasses = DomainColors[domainKey] || "bg-gray-500 text-white border-gray-600";
+  const colorClasses =
+    DomainColors[domainKey] || "bg-gray-500 text-white border-gray-600";
 
   return (
     <Badge
-      className={cn(
-        "font-medium text-xs px-2 py-1",
-        colorClasses,
-        className
-      )}
+      className={cn("px-2 py-1 text-xs font-medium", colorClasses, className)}
     >
       {domain}
     </Badge>

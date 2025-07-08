@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { User, Crown, Info } from "lucide-react";
+import { User, Crown, Info, Edit } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import DomainBadge from "~/components/DomainBadge";
@@ -46,7 +46,7 @@ export default function CharacterHeader({
     subclass: string,
   ): string => {
     const subclassData = Subclasses.find(
-      (sc) => sc.name.toLowerCase().replace(/\s+/g, "-") === subclass
+      (sc) => sc.name.toLowerCase().replace(/\s+/g, "-") === subclass,
     );
     return subclassData?.name ?? subclass;
   };
@@ -80,6 +80,15 @@ export default function CharacterHeader({
                 {character.name}
               </h1>
               {isOwner && <Crown className="h-6 w-6 text-yellow-500" />}
+              {isOwner && (
+                <Link
+                  href={`/character/new?characterId=${character.id}`}
+                  className="flex items-center gap-1 rounded bg-slate-600 px-2 py-1 text-sm text-slate-300 transition-colors hover:bg-slate-500 hover:text-white"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Link>
+              )}
             </div>
 
             {character.pronouns && (

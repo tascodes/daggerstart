@@ -48,11 +48,15 @@ export type ClassKeys = (typeof Class)[keyof typeof Class];
 
 export const classShortDescriptions = {
   bard: "Charismatic performers who use music and tales to captivate.",
-  druid: "Nature's guardians who transform into beasts and wield wilderness forces.",
-  guardian: "Steadfast defenders with unshakeable fortitude who protect allies.",
-  ranger: "Skilled hunters who bond with animal companions and master wilderness.",
+  druid:
+    "Nature's guardians who transform into beasts and wield wilderness forces.",
+  guardian:
+    "Steadfast defenders with unshakeable fortitude who protect allies.",
+  ranger:
+    "Skilled hunters who bond with animal companions and master wilderness.",
   rogue: "Cunning scoundrels who manipulate shadows and use stealth tactics.",
-  seraph: "Divine warriors serving as both healers and terrifying holy fighters.",
+  seraph:
+    "Divine warriors serving as both healers and terrifying holy fighters.",
   sorcerer: "Innate magic wielders who control powerful elemental abilities.",
   warrior: "Dedicated fighters who master weapons through lifetime training.",
   wizard: "Scholarly mages who acquire power through arcane study.",

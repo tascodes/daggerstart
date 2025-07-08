@@ -66,6 +66,31 @@ const updateDamageThresholdSchema = z.object({
   value: z.string().optional(),
 });
 
+const updateCharacterSchema = z.object({
+  id: z.string(),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(50, "Name must be less than 50 characters"),
+  pronouns: z.string().optional(),
+  class: z.string().min(1, "Class is required"),
+  subclass: z.string().min(1, "Subclass is required"),
+  ancestry: z.string().min(1, "Ancestry is required"),
+  community: z.string().min(1, "Community is required"),
+  level: z
+    .number()
+    .min(1, "Level must be at least 1")
+    .max(10, "Level must be at most 10"),
+  experience1: z
+    .string()
+    .max(50, "Experience must be less than 50 characters")
+    .optional(),
+  experience2: z
+    .string()
+    .max(50, "Experience must be less than 50 characters")
+    .optional(),
+});
+
 export const characterRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createCharacterSchema)
@@ -74,7 +99,7 @@ export const characterRouter = createTRPCRouter({
       const classData = classes.find(
         (cls) => cls.name.toLowerCase() === input.class.toLowerCase(),
       );
-      
+
       // Parse HP and evasion from the class data (convert string to number)
       const maxHp = classData ? parseInt(classData.hp, 10) : 5;
       const evasion = classData ? parseInt(classData.evasion, 10) : 10;
@@ -287,6 +312,50 @@ export const characterRouter = createTRPCRouter({
       return ctx.db.character.update({
         where: { id: input.id },
         data: { [input.field]: input.value },
+      });
+    }),
+
+  update: protectedProcedure
+    .input(updateCharacterSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      // Find the class data to get HP and evasion values
+      const classData = classes.find(
+        (cls) => cls.name.toLowerCase() === input.class.toLowerCase(),
+      );
+
+      // Parse HP and evasion from the class data (convert string to number)
+      const maxHp = classData ? parseInt(classData.hp, 10) : 5;
+      const evasion = classData ? parseInt(classData.evasion, 10) : 10;
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: {
+          name: input.name,
+          pronouns: input.pronouns,
+          class: input.class,
+          subclass: input.subclass,
+          ancestry: input.ancestry,
+          community: input.community,
+          level: input.level,
+          experience1: input.experience1,
+          experience2: input.experience2,
+          maxHp: maxHp,
+          evasion: evasion,
+        },
       });
     }),
 

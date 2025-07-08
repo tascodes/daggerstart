@@ -1,7 +1,16 @@
 "use client";
 
 import { Plus, Minus } from "lucide-react";
-type ClassKeys = "warrior" | "bard" | "wizard" | "druid" | "guardian" | "rogue" | "seraph" | "sorcerer" | "ranger";
+type ClassKeys =
+  | "warrior"
+  | "bard"
+  | "wizard"
+  | "druid"
+  | "guardian"
+  | "rogue"
+  | "seraph"
+  | "sorcerer"
+  | "ranger";
 
 const hopeFeatures = {
   warrior:
@@ -131,7 +140,9 @@ const HopeBar = ({
       {!!_class && _class in hopeFeatures && (
         <div
           className="text-sm text-white"
-          dangerouslySetInnerHTML={{ __html: hopeFeatures[_class as keyof typeof hopeFeatures] }}
+          dangerouslySetInnerHTML={{
+            __html: hopeFeatures[_class as keyof typeof hopeFeatures],
+          }}
         ></div>
       )}
     </div>
