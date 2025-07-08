@@ -2,13 +2,17 @@
 
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { User, Crown, Info } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { subclassesByClass, type ClassKeys } from "~/app/pc/new/constants";
 import DomainBadge from "~/components/DomainBadge";
 import { classes } from "~/lib/srd/classes";
+import { Subclasses } from "~/lib/srd/subclasses";
 
 interface CharacterHeaderProps {
   character: {
@@ -41,15 +45,10 @@ export default function CharacterHeader({
     characterClass: string,
     subclass: string,
   ): string => {
-    const classKey = characterClass as ClassKeys;
-    const subclassOptions = subclassesByClass[classKey];
-    if (subclassOptions) {
-      const subclassOption = subclassOptions.find(
-        (option) => option.value === subclass,
-      );
-      return subclassOption?.label ?? subclass;
-    }
-    return subclass;
+    const subclassData = Subclasses.find(
+      (sc) => sc.name.toLowerCase().replace(/\s+/g, "-") === subclass
+    );
+    return subclassData?.name ?? subclass;
   };
 
   // Helper function to get domains for a class
@@ -108,15 +107,17 @@ export default function CharacterHeader({
                 <p className="text-sm text-slate-400">Class</p>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="flex items-center gap-1 font-medium text-white capitalize hover:text-sky-400 transition-colors">
+                    <button className="flex items-center gap-1 font-medium text-white capitalize transition-colors hover:text-sky-400">
                       {character.class}
                       <Info className="h-4 w-4" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80 bg-slate-800 border-slate-600 text-white">
+                  <PopoverContent className="w-80 border-slate-600 bg-slate-800 text-white">
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-lg capitalize">{character.class}</h4>
-                      <p className="text-sm text-slate-300 leading-relaxed">
+                      <h4 className="text-lg font-semibold capitalize">
+                        {character.class}
+                      </h4>
+                      <p className="text-sm leading-relaxed text-slate-300">
                         {getClassDescription(character.class)}
                       </p>
                     </div>

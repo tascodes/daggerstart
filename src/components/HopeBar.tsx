@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Minus } from "lucide-react";
-import type { ClassKeys } from "~/app/pc/new/constants";
+type ClassKeys = "warrior" | "bard" | "wizard" | "druid" | "guardian" | "rogue" | "seraph" | "sorcerer" | "ranger";
 
 const hopeFeatures = {
   warrior:
@@ -27,7 +27,7 @@ interface HopeBarProps {
   maxValue: number;
   onValueChange: (newValue: number) => void;
   disabled?: boolean;
-  _class?: ClassKeys;
+  _class?: string;
 }
 
 const HopeBar = ({
@@ -128,10 +128,10 @@ const HopeBar = ({
           {value}/{maxValue}
         </span>
       </div>
-      {!!_class && (
+      {!!_class && _class in hopeFeatures && (
         <div
           className="text-sm text-white"
-          dangerouslySetInnerHTML={{ __html: hopeFeatures[_class] }}
+          dangerouslySetInnerHTML={{ __html: hopeFeatures[_class as keyof typeof hopeFeatures] }}
         ></div>
       )}
     </div>

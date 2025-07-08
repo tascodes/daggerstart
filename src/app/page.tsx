@@ -94,7 +94,7 @@ export default function Home() {
           <>
             {/* Action Buttons */}
             <div className="mb-8 flex items-center gap-4">
-              <Link href="/pc/new">
+              <Link href="/character/new">
                 <Button className="bg-sky-500 text-white hover:bg-yellow-600">
                   Create New Character
                 </Button>
@@ -122,7 +122,7 @@ export default function Home() {
                 <p className="mb-8 text-slate-400">
                   Create your first character to get started on your adventure!
                 </p>
-                <Link href="/pc/new">
+                <Link href="/character/new">
                   <Button className="bg-sky-500 text-white hover:bg-yellow-600">
                     Create Your First Character
                   </Button>

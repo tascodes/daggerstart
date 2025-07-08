@@ -7,7 +7,7 @@ import StressBar from "./StressBar";
 import HopeBar from "./HopeBar";
 import { Input } from "./ui/input";
 import type { Character } from "@prisma/client";
-import type { ClassKeys } from "~/app/pc/new/constants";
+// Removed unused import
 import { classes } from "~/lib/srd/classes";
 
 interface HealthSectionProps {
@@ -228,7 +228,7 @@ const HealthSection = ({
       {/* Hope Section */}
       <HopeBar
         value={character.hope}
-        _class={character.class as ClassKeys}
+        _class={character.class}
         maxValue={6}
         onValueChange={(value) => handleHealthStatChange("hope", value)}
         disabled={!isOwner}
