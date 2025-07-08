@@ -55,13 +55,17 @@ export default function CharacterCardsClient({
       <div className="mx-auto max-w-6xl px-4">
         {/* Header with Back Button */}
         <div className="mb-8 flex items-center gap-4">
-          <Link href={character.game ? `/game/${character.game.id}` : "/"}>
+          <Link
+            href={
+              character.game ? `/games/${character.game.id}` : "/characters"
+            }
+          >
             <Button
               variant="outline"
               className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {character.game ? "Back to Game" : "Back to Home"}
+              {character.game ? "Back to Game" : "Back to Characters"}
             </Button>
           </Link>
         </div>

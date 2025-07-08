@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -32,9 +33,18 @@ import { Trash2, Users, Crown } from "lucide-react";
 
 export default function GameListClient() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [gameName, setGameName] = useState("");
   const [gameDescription, setGameDescription] = useState("");
+
+  // Check for create query parameter on mount
+  useEffect(() => {
+    const shouldOpenCreate = searchParams.get("create") === "true";
+    if (shouldOpenCreate) {
+      setCreateDialogOpen(true);
+    }
+  }, [searchParams]);
 
   const { data: games, refetch } = api.game.getUserGames.useQuery();
 
@@ -78,14 +88,6 @@ export default function GameListClient() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button
-                variant="outline"
-                className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
-              >
-                Back to Characters
-              </Button>
-            </Link>
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-sky-500 text-white hover:bg-yellow-600">
@@ -272,7 +274,7 @@ export default function GameListClient() {
                     <div className="text-xs text-slate-500">
                       Created {new Date(game.createdAt).toLocaleDateString()}
                     </div>
-                    <Link href={`/game/${game.id}`}>
+                    <Link href={`/games/${game.id}`}>
                       <Button
                         size="sm"
                         className="bg-sky-500 text-white hover:bg-sky-600"

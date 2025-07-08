@@ -15,16 +15,17 @@ const CharacterTabs = ({ characterId, activeTab }: CharacterTabsProps) => {
     {
       id: "details",
       label: "Character Details",
-      href: `/character/${characterId}`,
+      href: `/characters/${characterId}`,
       isActive:
-        activeTab === "details" || pathname === `/character/${characterId}`,
+        activeTab === "details" || pathname === `/characters/${characterId}`,
     },
     {
       id: "cards",
       label: "Cards",
-      href: `/character/${characterId}/cards`,
+      href: `/characters/${characterId}/cards`,
       isActive:
-        activeTab === "cards" || pathname === `/character/${characterId}/cards`,
+        activeTab === "cards" ||
+        pathname === `/characters/${characterId}/cards`,
     },
   ];
 

@@ -93,18 +93,10 @@ export default function Home() {
         ) : (
           <>
             {/* Action Buttons */}
-            <div className="mb-8 flex items-center gap-4">
-              <Link href="/character/new">
+            <div className="mb-8">
+              <Link href="/characters/create">
                 <Button className="bg-sky-500 text-white hover:bg-yellow-600">
                   Create New Character
-                </Button>
-              </Link>
-              <Link href="/game">
-                <Button
-                  variant="outline"
-                  className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
-                >
-                  View Games
                 </Button>
               </Link>
             </div>
@@ -122,7 +114,7 @@ export default function Home() {
                 <p className="mb-8 text-slate-400">
                   Create your first character to get started on your adventure!
                 </p>
-                <Link href="/character/new">
+                <Link href="/characters/create">
                   <Button className="bg-sky-500 text-white hover:bg-yellow-600">
                     Create Your First Character
                   </Button>
@@ -245,7 +237,7 @@ export default function Home() {
                         Created{" "}
                         {new Date(character.createdAt).toLocaleDateString()}
                       </div>
-                      <Link href={`/character/${character.id}`}>
+                      <Link href={`/characters/${character.id}`}>
                         <Button
                           size="sm"
                           className="bg-sky-500 text-white hover:bg-sky-600"

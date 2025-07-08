@@ -82,7 +82,7 @@ export default function CharacterHeader({
               {isOwner && <Crown className="h-6 w-6 text-yellow-500" />}
               {isOwner && (
                 <Link
-                  href={`/character/new?characterId=${character.id}`}
+                  href={`/characters/create?characterId=${character.id}`}
                   className="flex items-center gap-1 rounded bg-slate-600 px-2 py-1 text-sm text-slate-300 transition-colors hover:bg-slate-500 hover:text-white"
                 >
                   <Edit className="h-4 w-4" />
@@ -183,7 +183,7 @@ export default function CharacterHeader({
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-3">
                 <p className="text-sm text-slate-400">Current Game</p>
                 <Link
-                  href={`/game/${character.game.id}`}
+                  href={`/games/${character.game.id}`}
                   className="font-medium text-sky-400 hover:text-sky-300"
                 >
                   {character.game.name}

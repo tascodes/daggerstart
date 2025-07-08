@@ -117,7 +117,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold text-white">Game not found</h1>
-          <Link href="/game">
+          <Link href="/games">
             <Button className="bg-sky-500 text-white hover:bg-sky-600">
               Back to Games
             </Button>
@@ -146,7 +146,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/game">
+            <Link href="/games">
               <Button
                 variant="outline"
                 className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
@@ -329,7 +329,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                         <div className="mb-3 flex items-start justify-between">
                           <div>
                             <Link
-                              href={`/character/${character.id}`}
+                              href={`/characters/${character.id}`}
                               className="mb-1 text-lg font-bold text-white transition-colors hover:text-sky-400"
                             >
                               {character.name}

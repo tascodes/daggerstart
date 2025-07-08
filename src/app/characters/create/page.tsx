@@ -117,14 +117,14 @@ export default function NewCharacterPage() {
   const watchedClass = form.watch("class");
 
   const createCharacter = api.character.create.useMutation({
-    onSuccess: () => {
-      router.push("/");
+    onSuccess: (newCharacter) => {
+      router.push(`/characters/${newCharacter.id}`);
     },
   });
 
   const updateCharacter = api.character.update.useMutation({
-    onSuccess: () => {
-      router.push("/");
+    onSuccess: (updatedCharacter) => {
+      router.push(`/characters/${updatedCharacter.id}`);
     },
   });
 
