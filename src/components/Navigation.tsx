@@ -30,51 +30,54 @@ const Navigation = () => {
       <div className="flex items-center justify-between">
         <NavigationMenu>
           <NavigationMenuList>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-slate-900 text-white hover:bg-slate-800 hover:text-sky-500 data-[active]:bg-slate-800 data-[state=open]:bg-slate-800">
-            Games
-          </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid gap-3 border border-slate-700 bg-slate-800 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-              <li className="row-span-3">
-                <NavigationMenuLink asChild>
-                  <Link
-                    className="flex h-full w-full flex-col justify-end rounded-md bg-gradient-to-b from-slate-700/50 to-slate-700 p-6 text-white no-underline outline-none select-none hover:bg-slate-600 focus:shadow-md"
-                    href="/games"
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="bg-slate-900 text-white hover:bg-slate-800 hover:text-sky-500 data-[active]:bg-slate-800 data-[state=open]:bg-slate-800">
+                Campaigns
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid gap-3 border border-slate-700 bg-slate-800 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                  <li className="row-span-3">
+                    <NavigationMenuLink asChild>
+                      <Link
+                        className="flex h-full w-full flex-col justify-end rounded-md bg-gradient-to-b from-slate-700/50 to-slate-700 p-6 text-white no-underline outline-none select-none hover:bg-slate-600 focus:shadow-md"
+                        href="/campaigns"
+                      >
+                        <div className="mt-4 mb-2 text-lg font-medium text-white">
+                          My Campaigns
+                        </div>
+                        <p className="text-sm leading-tight text-slate-300">
+                          Manage and join Daggerheart campaigns
+                        </p>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <ListItem
+                    href="/campaigns?create=true"
+                    title="Create Campaign"
                   >
-                    <div className="mt-4 mb-2 text-lg font-medium text-white">
-                      My Games
-                    </div>
-                    <p className="text-sm leading-tight text-slate-300">
-                      Manage and join DaggerHeart games
-                    </p>
-                  </Link>
-                </NavigationMenuLink>
-              </li>
-              <ListItem href="/games?create=true" title="Create Game">
-                Start a new DaggerHeart campaign
-              </ListItem>
-              <ListItem href="/games/join" title="Join Game">
-                Join an existing game with an invite code
-              </ListItem>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-slate-900 text-white hover:bg-slate-800 hover:text-sky-500 data-[active]:bg-slate-800 data-[state=open]:bg-slate-800">
-            Characters
-          </NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-3 border border-slate-700 bg-slate-800 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-              <ListItem href="/characters" title="My Characters">
-                View and manage your character roster
-              </ListItem>
-              <ListItem href="/characters/create" title="Create Character">
-                Build a new DaggerHeart character
-              </ListItem>
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem>
+                    Start a new Daggerheart campaign
+                  </ListItem>
+                  <ListItem href="/campaigns/join" title="Join Campaign">
+                    Join an existing campaign with an invite code
+                  </ListItem>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="bg-slate-900 text-white hover:bg-slate-800 hover:text-sky-500 data-[active]:bg-slate-800 data-[state=open]:bg-slate-800">
+                Characters
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-[400px] gap-3 border border-slate-700 bg-slate-800 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                  <ListItem href="/characters" title="My Characters">
+                    View and manage your character roster
+                  </ListItem>
+                  <ListItem href="/characters/create" title="Create Character">
+                    Build a new Daggerheart character
+                  </ListItem>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
 
@@ -88,28 +91,28 @@ const Navigation = () => {
                   className="relative h-8 w-8 rounded-full p-0 hover:bg-slate-800"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={session.user?.image ?? undefined} 
-                      alt={session.user?.name ?? "User"} 
+                    <AvatarImage
+                      src={session.user?.image ?? undefined}
+                      alt={session.user?.name ?? "User"}
                     />
-                    <AvatarFallback className="bg-sky-500 text-white text-sm">
+                    <AvatarFallback className="bg-sky-500 text-sm text-white">
                       {session.user?.name?.[0]?.toUpperCase() ?? "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-56 bg-slate-800 border-slate-700" 
+              <DropdownMenuContent
+                className="w-56 border-slate-700 bg-slate-800"
                 align="end"
               >
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-white hover:bg-slate-700 focus:bg-slate-700"
                   disabled
                 >
                   <p className="text-sm font-medium">{session.user?.name}</p>
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-white hover:bg-slate-700 focus:bg-slate-700 cursor-pointer"
+                <DropdownMenuItem
+                  className="cursor-pointer text-white hover:bg-slate-700 focus:bg-slate-700"
                   onClick={() => signOut()}
                 >
                   Sign Out

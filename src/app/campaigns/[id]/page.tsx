@@ -1,15 +1,17 @@
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
 import { redirect, notFound } from "next/navigation";
-import GameDetailClient from "./GameDetailClient";
+import CampaignDetailClient from "./CampaignDetailClient";
 
-interface GameDetailPageProps {
+interface CampaignDetailPageProps {
   params: Promise<{
     id: string;
   }>;
 }
 
-export default async function GameDetailPage({ params }: GameDetailPageProps) {
+export default async function CampaignDetailPage({
+  params,
+}: CampaignDetailPageProps) {
   const session = await auth();
   const resolvedParams = await params;
 
@@ -18,13 +20,13 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
   }
 
   try {
-    // Prefetch game data
+    // Prefetch campaign data
     void api.game.getById.prefetch({ id: resolvedParams.id });
 
-    // Check if game exists by trying to fetch it
-    const game = await api.game.getById({ id: resolvedParams.id });
+    // Check if campaign exists by trying to fetch it
+    const campaign = await api.game.getById({ id: resolvedParams.id });
 
-    if (!game) {
+    if (!campaign) {
       notFound();
     }
   } catch {
@@ -33,7 +35,7 @@ export default async function GameDetailPage({ params }: GameDetailPageProps) {
 
   return (
     <HydrateClient>
-      <GameDetailClient gameId={resolvedParams.id} />
+      <CampaignDetailClient campaignId={resolvedParams.id} />
     </HydrateClient>
   );
 }

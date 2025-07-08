@@ -31,12 +31,12 @@ import { api } from "~/trpc/react";
 import Link from "next/link";
 import { Trash2, Users, Crown } from "lucide-react";
 
-export default function GameListClient() {
+export default function CampaignListClient() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [gameName, setGameName] = useState("");
-  const [gameDescription, setGameDescription] = useState("");
+  const [campaignName, setCampaignName] = useState("");
+  const [campaignDescription, setCampaignDescription] = useState("");
 
   // Check for create query parameter on mount
   useEffect(() => {
@@ -46,34 +46,34 @@ export default function GameListClient() {
     }
   }, [searchParams]);
 
-  const { data: games, refetch } = api.game.getUserGames.useQuery();
+  const { data: campaigns, refetch } = api.game.getUserGames.useQuery();
 
-  const createGame = api.game.create.useMutation({
+  const createCampaign = api.game.create.useMutation({
     onSuccess: () => {
       setCreateDialogOpen(false);
-      setGameName("");
-      setGameDescription("");
+      setCampaignName("");
+      setCampaignDescription("");
       void refetch();
     },
   });
 
-  const deleteGame = api.game.delete.useMutation({
+  const deleteCampaign = api.game.delete.useMutation({
     onSuccess: () => {
       void refetch();
     },
   });
 
-  const handleCreateGame = () => {
-    if (!gameName.trim()) return;
+  const handleCreateCampaign = () => {
+    if (!campaignName.trim()) return;
 
-    createGame.mutate({
-      name: gameName.trim(),
-      description: gameDescription.trim() || undefined,
+    createCampaign.mutate({
+      name: campaignName.trim(),
+      description: campaignDescription.trim() || undefined,
     });
   };
 
-  const handleDeleteGame = (gameId: string) => {
-    deleteGame.mutate({ id: gameId });
+  const handleDeleteCampaign = (campaignId: string) => {
+    deleteCampaign.mutate({ id: campaignId });
   };
 
   return (
@@ -82,37 +82,38 @@ export default function GameListClient() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-4xl font-bold text-white">My Games</h1>
+            <h1 className="mb-2 text-4xl font-bold text-white">My Campaigns</h1>
             <p className="text-slate-400">
-              Games you&apos;re running or participating in
+              Campaigns you&apos;re running or participating in
             </p>
           </div>
           <div className="flex items-center gap-4">
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-sky-500 text-white hover:bg-yellow-600">
-                  Create New Game
+                  Create New Campaign
                 </Button>
               </DialogTrigger>
               <DialogContent className="border-slate-700 bg-slate-800">
                 <DialogHeader>
                   <DialogTitle className="text-white">
-                    Create New Game
+                    Create New Campaign
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
-                    Create a new game session. You&apos;ll be the Game Master.
+                    Create a new campaign session. You&apos;ll be the Campaign
+                    Master.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-white">
-                      Game Name
+                      Campaign Name
                     </Label>
                     <Input
                       id="name"
-                      value={gameName}
-                      onChange={(e) => setGameName(e.target.value)}
-                      placeholder="Enter game name"
+                      value={campaignName}
+                      onChange={(e) => setCampaignName(e.target.value)}
+                      placeholder="Enter campaign name"
                       className="border-slate-600 bg-slate-700 text-white"
                     />
                   </div>
@@ -122,9 +123,9 @@ export default function GameListClient() {
                     </Label>
                     <Textarea
                       id="description"
-                      value={gameDescription}
-                      onChange={(e) => setGameDescription(e.target.value)}
-                      placeholder="Describe your game session"
+                      value={campaignDescription}
+                      onChange={(e) => setCampaignDescription(e.target.value)}
+                      placeholder="Describe your campaign session"
                       className="border-slate-600 bg-slate-700 text-white"
                       rows={3}
                     />
@@ -141,11 +142,13 @@ export default function GameListClient() {
                   </Button>
                   <Button
                     type="button"
-                    onClick={handleCreateGame}
-                    disabled={!gameName.trim() || createGame.isPending}
+                    onClick={handleCreateCampaign}
+                    disabled={!campaignName.trim() || createCampaign.isPending}
                     className="bg-sky-500 text-white hover:bg-sky-600"
                   >
-                    {createGame.isPending ? "Creating..." : "Create Game"}
+                    {createCampaign.isPending
+                      ? "Creating..."
+                      : "Create Campaign"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -153,53 +156,54 @@ export default function GameListClient() {
           </div>
         </div>
 
-        {/* Games List */}
-        {games?.length === 0 ? (
+        {/* Campaigns List */}
+        {campaigns?.length === 0 ? (
           <div className="py-16 text-center">
             <h3 className="mb-4 text-xl font-semibold text-white">
-              No games yet
+              No campaigns yet
             </h3>
             <p className="mb-8 text-slate-400">
-              Create your first game or ask a Game Master to invite you!
+              Create your first campaign or ask a Campaign Master to invite you!
             </p>
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-sky-500 text-white hover:bg-yellow-600">
-                  Create Your First Game
+                  Create Your First Campaign
                 </Button>
               </DialogTrigger>
             </Dialog>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {games?.map((game) => {
-              const isGameMaster = game.gameMaster.id === session?.user.id;
-              const userCharacter = game.characters.find(
+            {campaigns?.map((campaign) => {
+              const isCampaignMaster =
+                campaign.gameMaster.id === session?.user.id;
+              const userCharacter = campaign.characters.find(
                 (char) => char.user.id === session?.user.id,
               );
 
               return (
                 <div
-                  key={game.id}
+                  key={campaign.id}
                   className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg transition-colors hover:border-slate-600"
                 >
                   <div className="mb-4 flex items-start justify-between">
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-2">
                         <h3 className="text-xl font-bold text-white">
-                          {game.name}
+                          {campaign.name}
                         </h3>
-                        {isGameMaster && (
+                        {isCampaignMaster && (
                           <Crown className="h-5 w-5 text-yellow-500" />
                         )}
                       </div>
-                      {game.description && (
+                      {campaign.description && (
                         <p className="mb-3 text-sm text-slate-400">
-                          {game.description}
+                          {campaign.description}
                         </p>
                       )}
                     </div>
-                    {isGameMaster && (
+                    {isCampaignMaster && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -213,12 +217,13 @@ export default function GameListClient() {
                         <AlertDialogContent className="border-slate-700 bg-slate-800">
                           <AlertDialogHeader>
                             <AlertDialogTitle className="text-white">
-                              Delete Game
+                              Delete Campaign
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-slate-400">
-                              Are you sure you want to delete &quot;{game.name}
+                              Are you sure you want to delete &quot;
+                              {campaign.name}
                               &quot;? This action cannot be undone and will
-                              remove all characters from the game.
+                              remove all characters from the campaign.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -226,7 +231,7 @@ export default function GameListClient() {
                               Cancel
                             </AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDeleteGame(game.id)}
+                              onClick={() => handleDeleteCampaign(campaign.id)}
                               className="bg-red-600 text-white hover:bg-red-700"
                             >
                               Delete
@@ -240,11 +245,11 @@ export default function GameListClient() {
                   <div className="mb-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">
-                        Game Master:
+                        Campaign Master:
                       </span>
                       <span className="text-sm text-white">
-                        {game.gameMaster.name}
-                        {isGameMaster && " (You)"}
+                        {campaign.gameMaster.name}
+                        {isCampaignMaster && " (You)"}
                       </span>
                     </div>
 
@@ -254,7 +259,7 @@ export default function GameListClient() {
                         Characters:
                       </span>
                       <span className="text-sm text-white">
-                        {game._count.characters}
+                        {campaign._count.characters}
                       </span>
                     </div>
 
@@ -272,14 +277,15 @@ export default function GameListClient() {
 
                   <div className="flex items-center justify-between border-t border-slate-700 pt-4">
                     <div className="text-xs text-slate-500">
-                      Created {new Date(game.createdAt).toLocaleDateString()}
+                      Created{" "}
+                      {new Date(campaign.createdAt).toLocaleDateString()}
                     </div>
-                    <Link href={`/games/${game.id}`}>
+                    <Link href={`/campaigns/${campaign.id}`}>
                       <Button
                         size="sm"
                         className="bg-sky-500 text-white hover:bg-sky-600"
                       >
-                        View Game
+                        View Campaign
                       </Button>
                     </Link>
                   </div>

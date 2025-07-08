@@ -9,8 +9,8 @@ import { auth } from "~/server/auth";
 import Navigation from "~/components/Navigation";
 
 export const metadata: Metadata = {
-  title: "DaggerHeart Character Manager",
-  description: "Create and manage your DaggerHeart characters and games",
+  title: "Daggerheart Character Manager",
+  description: "Create and manage your Daggerheart characters and campaigns",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

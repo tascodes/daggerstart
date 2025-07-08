@@ -29,51 +29,55 @@ import DiceRollFeed from "~/components/DiceRollFeed";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 import FearBar from "~/components/FearBar";
 
-interface GameDetailClientProps {
-  gameId: string;
+interface CampaignDetailClientProps {
+  campaignId: string;
 }
 
-export default function GameDetailClient({ gameId }: GameDetailClientProps) {
+export default function CampaignDetailClient({
+  campaignId,
+}: CampaignDetailClientProps) {
   const { data: session } = useSession();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>("");
 
-  const { data: game, refetch } = api.game.getById.useQuery({ id: gameId });
-
-  const { data: availableData } = api.game.getAvailableCharacters.useQuery({
-    gameId,
+  const { data: campaign, refetch } = api.game.getById.useQuery({
+    id: campaignId,
   });
 
-  // Get Fear data for game master
+  const { data: availableData } = api.game.getAvailableCharacters.useQuery({
+    gameId: campaignId,
+  });
+
+  // Get Fear data for campaign master
   const { data: fearCount } = api.game.getFear.useQuery(
-    { gameId },
-    { enabled: !!session?.user.id && !!gameId },
+    { gameId: campaignId },
+    { enabled: !!session?.user.id && !!campaignId },
   );
 
   const utils = api.useUtils();
   const updateFear = api.game.updateFear.useMutation({
     onMutate: async (variables) => {
-      await utils.game.getFear.cancel({ gameId });
-      const previousFear = utils.game.getFear.getData({ gameId });
-      utils.game.getFear.setData({ gameId }, variables.fearCount);
+      await utils.game.getFear.cancel({ gameId: campaignId });
+      const previousFear = utils.game.getFear.getData({ gameId: campaignId });
+      utils.game.getFear.setData({ gameId: campaignId }, variables.fearCount);
       return { previousFear };
     },
     onError: (error, variables, context) => {
-      utils.game.getFear.setData({ gameId }, context?.previousFear);
+      utils.game.getFear.setData({ gameId: campaignId }, context?.previousFear);
     },
     onSettled: () => {
-      void utils.game.getFear.invalidate({ gameId });
+      void utils.game.getFear.invalidate({ gameId: campaignId });
     },
   });
 
   // Subscribe to Fear updates
   api.game.onFearUpdate.useSubscription(
-    { gameId },
+    { gameId: campaignId },
     {
-      enabled: !!session?.user.id && !!gameId,
+      enabled: !!session?.user.id && !!campaignId,
       onData: () => {
         // Trigger a refetch when Fear updates occur
-        void utils.game.getFear.invalidate({ gameId });
+        void utils.game.getFear.invalidate({ gameId: campaignId });
       },
     },
   );
@@ -96,7 +100,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
     if (!selectedCharacterId) return;
 
     addCharacterToGame.mutate({
-      gameId,
+      gameId: campaignId,
       characterId: selectedCharacterId,
     });
   };
@@ -107,19 +111,19 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
   const handleFearChange = (newFear: number) => {
     updateFear.mutate({
-      gameId,
+      gameId: campaignId,
       fearCount: newFear,
     });
   };
 
-  if (!game) {
+  if (!campaign) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold text-white">Game not found</h1>
-          <Link href="/games">
+          <Link href="/campaigns">
             <Button className="bg-sky-500 text-white hover:bg-sky-600">
-              Back to Games
+              Back to Campaigns
             </Button>
           </Link>
         </div>
@@ -127,7 +131,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
     );
   }
 
-  const isGameMaster = game.gameMaster.id === session?.user.id;
+  const isGameMaster = campaign.gameMaster.id === session?.user.id;
   const canJoinGame =
     availableData?.canAddCharacter && availableData.characters.length > 0;
 
@@ -138,20 +142,20 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <div className="mb-2 flex items-center gap-3">
-              <h1 className="text-4xl font-bold text-white">{game.name}</h1>
+              <h1 className="text-4xl font-bold text-white">{campaign.name}</h1>
               {isGameMaster && <Crown className="h-8 w-8 text-yellow-500" />}
             </div>
-            {game.description && (
-              <p className="text-lg text-slate-400">{game.description}</p>
+            {campaign.description && (
+              <p className="text-lg text-slate-400">{campaign.description}</p>
             )}
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/games">
+            <Link href="/campaigns">
               <Button
                 variant="outline"
                 className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
               >
-                Back to Games
+                Back to Campaigns
               </Button>
             </Link>
             {canJoinGame && (
@@ -169,8 +173,8 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                     </DialogTitle>
                     <DialogDescription className="text-slate-400">
                       {isGameMaster
-                        ? "Select a character to add to your game."
-                        : "Select a character to add to this game."}
+                        ? "Select a character to add to your campaign."
+                        : "Select a character to add to this campaign."}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
@@ -241,10 +245,10 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 <h2 className="text-xl font-bold text-white">Game Master</h2>
               </div>
               <div className="flex items-center gap-3">
-                {game.gameMaster.image && (
+                {campaign.gameMaster.image && (
                   <Image
-                    src={game.gameMaster.image}
-                    alt={game.gameMaster.name ?? ""}
+                    src={campaign.gameMaster.image}
+                    alt={campaign.gameMaster.name ?? ""}
                     height={48}
                     width={48}
                     className="h-12 w-12 rounded-full"
@@ -252,7 +256,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 )}
                 <div>
                   <p className="font-medium text-white">
-                    {game.gameMaster.name}
+                    {campaign.gameMaster.name}
                     {isGameMaster && " (You)"}
                   </p>
                   <p className="text-sm text-slate-400">Game Master</p>
@@ -269,12 +273,14 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                     <Users className="h-4 w-4" />
                     Characters:
                   </span>
-                  <span className="text-white">{game._count.characters}</span>
+                  <span className="text-white">
+                    {campaign._count.characters}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Created:</span>
                   <span className="text-white">
-                    {new Date(game.createdAt).toLocaleDateString()}
+                    {new Date(campaign.createdAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -287,14 +293,14 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">Characters</h2>
                 <span className="text-sm text-slate-400">
-                  {game.characters.length} character(s) in this game
+                  {campaign.characters.length} character(s) in this campaign
                 </span>
               </div>
 
-              {game.characters.length === 0 ? (
+              {campaign.characters.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="mb-4 text-slate-400">
-                    No characters have joined this game yet.
+                    No characters have joined this campaign yet.
                   </p>
                   {canJoinGame && (
                     <Dialog
@@ -313,7 +319,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {game.characters.map((character) => {
+                  {campaign.characters.map((character) => {
                     const isUserCharacter =
                       character.user.id === session?.user.id;
 
@@ -402,7 +408,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
           </div>
         </div>
 
-        {/* Fear Section - Only show to game master */}
+        {/* Fear Section - Only show to campaign master */}
         {isGameMaster && (
           <div className="mt-8 w-fit rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
             <h3 className="mb-4 text-lg font-bold text-white">Fear</h3>
@@ -423,14 +429,14 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
           <div>
             {session && (
               <DiceRoller
-                gameId={gameId}
+                gameId={campaignId}
                 characterId={
-                  game.characters.find(
+                  campaign.characters.find(
                     (char) => char.user.id === session.user.id,
                   )?.id
                 }
                 characterName={
-                  game.characters.find(
+                  campaign.characters.find(
                     (char) => char.user.id === session.user.id,
                   )?.name
                 }
@@ -441,7 +447,7 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
           {/* Dice Roll Feed */}
           <div>
             <DiceRollFeed
-              gameId={gameId}
+              gameId={campaignId}
               isGameMaster={isGameMaster}
               limit={15}
             />
@@ -450,10 +456,10 @@ export default function GameDetailClient({ gameId }: GameDetailClientProps) {
 
         {/* Floating Dice Rolls */}
         <FloatingDiceRolls
-          gameId={gameId}
+          gameId={campaignId}
           onFearRoll={
             isGameMaster
-              ? () => void utils.game.getFear.invalidate({ gameId })
+              ? () => void utils.game.getFear.invalidate({ gameId: campaignId })
               : undefined
           }
         />

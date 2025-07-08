@@ -15,8 +15,8 @@ import { getDiceRollOutcome } from "~/utils/dice";
 const createGameSchema = z.object({
   name: z
     .string()
-    .min(1, "Game name is required")
-    .max(100, "Game name must be less than 100 characters"),
+    .min(1, "Campaign name is required")
+    .max(100, "Campaign name must be less than 100 characters"),
   description: z
     .string()
     .max(500, "Description must be less than 500 characters")
@@ -163,7 +163,7 @@ export const gameRouter = createTRPCRouter({
       }
 
       if (character.userId !== ctx.session.user.id) {
-        throw new Error("You can only add your own characters to games");
+        throw new Error("You can only add your own characters to campaigns");
       }
 
       // Verify the game exists
@@ -215,7 +215,9 @@ export const gameRouter = createTRPCRouter({
       }
 
       if (character.userId !== ctx.session.user.id) {
-        throw new Error("You can only remove your own characters from games");
+        throw new Error(
+          "You can only remove your own characters from campaigns",
+        );
       }
 
       return ctx.db.character.update({
