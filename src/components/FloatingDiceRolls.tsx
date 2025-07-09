@@ -183,7 +183,7 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
 
     // Update previous rolls reference
     prevRollsRef.current = rolls as DiceRoll[];
-  }, [rolls, isExpanded]);
+  }, [rolls, isExpanded, notificationsEnabled, onFearRoll]);
 
   // Only show if we have a gameId and session
   if (!gameId || !session) {

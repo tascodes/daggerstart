@@ -1,17 +1,11 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Button } from "~/components/ui/button";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import CharacterHeader from "~/components/CharacterHeader";
 import CharacterExperiences from "~/components/CharacterExperiences";
 import CharacterAbilities from "~/components/CharacterAbilities";
 import HealthSection from "~/components/HealthSection";
 import DefenseSection from "~/components/DefenseSection";
 import GoldSection from "~/components/GoldSection";
-import CharacterTabs from "~/components/CharacterTabs";
-import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 import FearBar from "~/components/FearBar";
 import { api } from "~/trpc/react";
 
@@ -29,7 +23,7 @@ export default function CharacterDetailClient({
 
   // Get Fear data if character is in a game
   const { data: fearCount } = api.game.getFear.useQuery(
-    { gameId: character?.gameId! },
+    { gameId: character?.gameId ?? "" },
     { enabled: !!character?.gameId },
   );
 
@@ -37,63 +31,24 @@ export default function CharacterDetailClient({
 
   // Subscribe to Fear updates
   api.game.onFearUpdate.useSubscription(
-    { gameId: character?.gameId! },
+    { gameId: character?.gameId ?? "" },
     {
       enabled: !!character?.gameId && !!session,
       onData: () => {
         // Trigger a refetch when Fear updates occur
-        void utils.game.getFear.invalidate({ gameId: character?.gameId! });
+        void utils.game.getFear.invalidate({ gameId: character?.gameId ?? "" });
       },
     },
   );
 
   if (!character) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-900">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-white">
-            Character not found
-          </h1>
-          <p className="text-slate-400">
-            This character doesn&apos;t exist or you don&apos;t have permission
-            to view it.
-          </p>
-        </div>
-      </div>
-    );
+    return null; // Layout will handle the not found case
   }
 
   const isOwner = character.user.id === session?.user.id;
 
   return (
-    <div className="min-h-screen bg-slate-900 py-8">
-      <div className="mx-auto max-w-4xl px-4">
-        {/* Header with Back Button */}
-        <div className="mb-8 flex items-center gap-4">
-          <Link
-            href={
-              character.game ? `/games/${character.game.id}` : "/characters"
-            }
-          >
-            <Button
-              variant="outline"
-              className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {character.game ? "Back to Game" : "Back to Characters"}
-            </Button>
-          </Link>
-        </div>
-
-        {/* Character Header */}
-        <div className="mb-8">
-          <CharacterHeader character={character} isOwner={isOwner} />
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="mb-8">
-          <CharacterTabs characterId={characterId} activeTab="details" />
-        </div>
+    <div className="mx-auto max-w-4xl">
 
         {/* Abilities Section */}
         <div className="mb-8">
@@ -179,9 +134,6 @@ export default function CharacterDetailClient({
           </div>
         </div>
 
-        {/* Floating Dice Rolls */}
-        <FloatingDiceRolls gameId={character.game?.id} />
-      </div>
     </div>
   );
 }

@@ -1,29 +1,23 @@
-import { auth } from "~/server/auth";
 import { api } from "~/trpc/server";
-import { redirect } from "next/navigation";
 import CharacterCardsClient from "./CharacterCardsClient";
 
 interface CharacterCardsPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function CharacterCardsPage({
   params,
 }: CharacterCardsPageProps) {
-  const session = await auth();
-
-  if (!session) {
-    redirect("/api/auth/signin");
-  }
-
+  const resolvedParams = await params;
+  
   try {
-    const character = await api.character.getById({ id: params.id });
+    const character = await api.character.getById({ id: resolvedParams.id });
 
     return (
-      <CharacterCardsClient characterId={params.id} character={character} />
+      <CharacterCardsClient characterId={resolvedParams.id} character={character} />
     );
   } catch (err) {
     console.error("Error fetching character:", err);
-    redirect("/");
+    return null; // Layout will handle the not found case
   }
 }

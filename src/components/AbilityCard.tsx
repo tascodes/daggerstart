@@ -8,19 +8,29 @@ interface AbilityCardProps {
   className?: string;
 }
 
-export const AbilityCard = ({ name, text, tokens, className }: AbilityCardProps) => {
+export const AbilityCard = ({
+  name,
+  text,
+  tokens,
+  className,
+}: AbilityCardProps) => {
   return (
-    <Card className={cn("relative aspect-[2/3] flex flex-col bg-slate-800 border-slate-700", className)}>
+    <Card
+      className={cn(
+        "relative flex aspect-[2/3] flex-col border-slate-700 bg-slate-800",
+        className,
+      )}
+    >
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-bold text-white">{name}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-between">
-        <p className="text-sm text-slate-300 line-clamp-6">{text}</p>
-        <div className="flex gap-2 mt-4">
+      <CardContent className="flex flex-1 flex-col justify-between">
+        <p className="text-sm text-slate-300">{text}</p>
+        <div className="mt-4 flex gap-2">
           {Array.from({ length: tokens }).map((_, index) => (
             <div
               key={index}
-              className="w-8 h-8 rounded-full bg-sky-500 shadow-lg shadow-sky-500/50"
+              className="h-8 w-8 rounded-full bg-sky-500 shadow-lg"
             />
           ))}
         </div>

@@ -55,17 +55,17 @@ model Session {
 }
 
 model User {
-    id            String      @id @default(cuid())
-    name          String?
-    email         String?     @unique
-    emailVerified DateTime?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
-    posts         Post[]
-    characters    Character[]
-    gameMaster    Game[]
-    diceRolls     DiceRoll[]
+    id             String           @id @default(cuid())
+    name           String?
+    email          String?          @unique
+    emailVerified  DateTime?
+    image          String?
+    accounts       Account[]
+    sessions       Session[]
+    posts          Post[]
+    characters     Character[]
+    gameMaster     Game[]
+    diceRolls      DiceRoll[]
     gameMasterFear GameMasterFear[]
 }
 
@@ -104,15 +104,15 @@ model Character {
     hope                  Int     @default(0)
     majorDamageThreshold  String?
     severeDamageThreshold String?
-    
+
     // Defense stats
-    evasion               Int     @default(0)
-    armor                 Int     @default(0)
-    
+    evasion Int @default(0)
+    armor   Int @default(0)
+
     // Gold/wealth tracking
-    goldHandfuls          Int     @default(0)
-    goldBags              Int     @default(0)
-    goldChest             Boolean @default(false)
+    goldHandfuls Int     @default(0)
+    goldBags     Int     @default(0)
+    goldChest    Boolean @default(false)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -123,7 +123,8 @@ model Character {
     game   Game?   @relation(fields: [gameId], references: [id], onDelete: SetNull)
     gameId String?
 
-    diceRolls DiceRoll[]
+    diceRolls      DiceRoll[]
+    CharacterLevel CharacterLevel[]
 
     @@index([userId])
     @@index([gameId])
@@ -139,8 +140,8 @@ model Game {
     gameMaster   User   @relation(fields: [gameMasterId], references: [id], onDelete: Cascade)
     gameMasterId String
 
-    characters Character[]
-    diceRolls  DiceRoll[]
+    characters     Character[]
+    diceRolls      DiceRoll[]
     gameMasterFear GameMasterFear[]
 
     @@index([gameMasterId])
@@ -179,19 +180,90 @@ model DiceRoll {
 }
 
 model GameMasterFear {
-    id          String   @id @default(cuid())
-    fearCount   Int      @default(0)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    
+    id        String   @id @default(cuid())
+    fearCount Int      @default(0)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
     // Relations - unique per user per game
-    game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-    gameId      String
-    
-    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId      String
-    
+    game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+    gameId String
+
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId String
+
     @@unique([gameId, userId])
     @@index([gameId])
     @@index([userId])
+}
+
+enum LevelChoice {
+    TRAIT_BONUS
+    HIT_POINT_SLOT
+    STRESS_SLOT
+    EXPERIENCE_BONUS
+    DOMAIN_CARD
+    EVASION_BONUS
+    SUBCLASS_CARD
+    PROFICIENCY
+    MULTICLASS
+}
+
+model CharacterLevel {
+    id                  String                             @id @default(cuid())
+    level               Int                                @default(1)
+    choices             CharacterLevelChoice[]
+    // traits increased at this level
+    traitIncreases      CharacterLevelTraitIncrease[]
+    // experiences increased at this level
+    experienceIncreases CharacterLevelExperienceIncrease[]
+    // class chosen for multiclassing at this level
+    multiclass          String?
+    createdAt           DateTime                           @default(now())
+    updatedAt           DateTime                           @updatedAt
+
+    character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+    characterId String
+
+    @@unique([characterId, level])
+    @@index([characterId])
+    @@index([level])
+    @@index([characterId, level])
+}
+
+model CharacterLevelChoice {
+    id               String         @id @default(cuid())
+    characterLevel   CharacterLevel @relation(fields: [characterLevelId], references: [id], onDelete: Cascade)
+    characterLevelId String
+    choice           LevelChoice
+
+    @@index([characterLevelId])
+}
+
+enum Trait {
+    AGILITY
+    STRENGTH
+    FINESSE
+    INSTINCT
+    PRESENCE
+    KNOWLEDGE
+}
+
+model CharacterLevelTraitIncrease {
+    id               String         @id @default(cuid())
+    characterLevel   CharacterLevel @relation(fields: [characterLevelId], references: [id], onDelete: Cascade)
+    characterLevelId String
+    trait            Trait
+
+    @@index([characterLevelId])
+    @@index([trait])
+}
+
+model CharacterLevelExperienceIncrease {
+    id               String         @id @default(cuid())
+    characterLevel   CharacterLevel @relation(fields: [characterLevelId], references: [id], onDelete: Cascade)
+    characterLevelId String
+    experience       String
+
+    @@index([characterLevelId])
 }

@@ -1,16 +1,6 @@
 "use client";
 
 import { Plus, Minus } from "lucide-react";
-type ClassKeys =
-  | "warrior"
-  | "bard"
-  | "wizard"
-  | "druid"
-  | "guardian"
-  | "rogue"
-  | "seraph"
-  | "sorcerer"
-  | "ranger";
 
 const hopeFeatures = {
   warrior:
