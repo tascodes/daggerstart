@@ -33,8 +33,24 @@ interface CharacterTraitsProps {
 
 interface Trait {
   name: string;
-  key: keyof Pick<CharacterTraitsProps["character"], "agilityModifier" | "strengthModifier" | "finesseModifier" | "instinctModifier" | "presenceModifier" | "knowledgeModifier">;
-  markedKey: keyof Pick<CharacterTraitsProps["character"], "agilityMarked" | "strengthMarked" | "finesseMarked" | "instinctMarked" | "presenceMarked" | "knowledgeMarked">;
+  key: keyof Pick<
+    CharacterTraitsProps["character"],
+    | "agilityModifier"
+    | "strengthModifier"
+    | "finesseModifier"
+    | "instinctModifier"
+    | "presenceModifier"
+    | "knowledgeModifier"
+  >;
+  markedKey: keyof Pick<
+    CharacterTraitsProps["character"],
+    | "agilityMarked"
+    | "strengthMarked"
+    | "finesseMarked"
+    | "instinctMarked"
+    | "presenceMarked"
+    | "knowledgeMarked"
+  >;
   examples: string[];
 }
 
@@ -123,10 +139,13 @@ export default function CharacterTraits({
 
         const fieldName = traitFieldMap[trait];
 
-        utils.character.getById.setData({ id }, {
-          ...previousCharacter,
-          [fieldName]: marked,
-        });
+        utils.character.getById.setData(
+          { id },
+          {
+            ...previousCharacter,
+            [fieldName]: marked,
+          },
+        );
       }
 
       // Return a context object with the snapshotted value
@@ -149,7 +168,15 @@ export default function CharacterTraits({
 
   const handleTraitClick = (
     traitName: string,
-    traitKey: keyof Pick<CharacterTraitsProps["character"], "agilityModifier" | "strengthModifier" | "finesseModifier" | "instinctModifier" | "presenceModifier" | "knowledgeModifier">,
+    traitKey: keyof Pick<
+      CharacterTraitsProps["character"],
+      | "agilityModifier"
+      | "strengthModifier"
+      | "finesseModifier"
+      | "instinctModifier"
+      | "presenceModifier"
+      | "knowledgeModifier"
+    >,
   ) => {
     if (!game || isEditing) return;
 
@@ -358,9 +385,7 @@ export default function CharacterTraits({
                             ? "cursor-pointer transition-colors hover:text-sky-400"
                             : ""
                         }`}
-                        onClick={() =>
-                          handleTraitClick(trait.name, trait.key)
-                        }
+                        onClick={() => handleTraitClick(trait.name, trait.key)}
                         title={canRoll ? `Roll ${trait.name}` : undefined}
                       >
                         {formatModifier(currentValue)}

@@ -95,12 +95,28 @@ const updateCharacterSchema = z.object({
 
 const levelUpSchema = z.object({
   characterId: z.string(),
-  choices: z.array(z.enum(["traits", "hitpoints", "stress", "experiences", "domain", "evasion"])),
+  choices: z.array(
+    z.enum([
+      "traits",
+      "hitpoints",
+      "stress",
+      "experiences",
+      "domain",
+      "evasion",
+    ]),
+  ),
 });
 
 const updateTraitMarkedSchema = z.object({
   id: z.string(),
-  trait: z.enum(["agility", "strength", "finesse", "instinct", "presence", "knowledge"]),
+  trait: z.enum([
+    "agility",
+    "strength",
+    "finesse",
+    "instinct",
+    "presence",
+    "knowledge",
+  ]),
   marked: z.boolean(),
 });
 
@@ -120,24 +136,24 @@ const calculateBaseSlotsByLevel = (
   levelHistory: Array<{
     level: number;
     choices: Array<{ choice: string }>;
-  }>
+  }>,
 ): Record<number, number> => {
   const baseSlots: Record<number, number> = {};
-  
+
   // 2 cards at level 1
   baseSlots[1] = 2;
-  
+
   // 1 card per level from 2 to characterLevel (default)
   for (let level = 2; level <= characterLevel; level++) {
     baseSlots[level] = 1;
   }
-  
+
   // Check for domain card choices that modify slots
   levelHistory.forEach((levelData) => {
     const domainCardChoices = levelData.choices.filter(
-      choice => choice.choice === "DOMAIN_CARD"
+      (choice) => choice.choice === "DOMAIN_CARD",
     );
-    
+
     if (domainCardChoices.length > 0) {
       // Domain card choice gives 2 slots at that level (instead of the default 1)
       const choiceLevel = levelData.level;
@@ -146,7 +162,7 @@ const calculateBaseSlotsByLevel = (
       }
     }
   });
-  
+
   return baseSlots;
 };
 
@@ -158,17 +174,17 @@ const calculateSlotAllocation = (
     choices: Array<{ choice: string }>;
   }>,
   selectedCards: Array<{ cardName: string }>,
-  abilities: Array<{ name: string; level: string }>
+  abilities: Array<{ name: string; level: string }>,
 ): {
   slotAllocation: Record<number, number>; // How many slots at each level are used
   canSelectLevel: Record<number, boolean>; // Which card levels can still be selected
 } => {
   const baseSlots = calculateBaseSlotsByLevel(characterLevel, levelHistory);
-  
+
   // Get all selected card levels
   const selectedCardLevels: number[] = [];
   selectedCards.forEach((selectedCard) => {
-    const ability = abilities.find(a => a.name === selectedCard.cardName);
+    const ability = abilities.find((a) => a.name === selectedCard.cardName);
     if (ability) {
       const selectedCardLevel = parseInt(ability.level);
       if (selectedCardLevel <= characterLevel) {
@@ -189,12 +205,16 @@ const calculateSlotAllocation = (
   // For each selected card, allocate the lowest available slot that can accommodate it
   selectedCardLevels.forEach((cardLevel) => {
     let allocated = false;
-    
+
     // Try to allocate from cardLevel upward
-    for (let slotLevel = cardLevel; slotLevel <= characterLevel && !allocated; slotLevel++) {
+    for (
+      let slotLevel = cardLevel;
+      slotLevel <= characterLevel && !allocated;
+      slotLevel++
+    ) {
       const slotsAtLevel = baseSlots[slotLevel] ?? 0;
       const usedAtLevel = slotAllocation[slotLevel] ?? 0;
-      
+
       if (usedAtLevel < slotsAtLevel) {
         slotAllocation[slotLevel] = (slotAllocation[slotLevel] ?? 0) + 1;
         allocated = true;
@@ -206,18 +226,18 @@ const calculateSlotAllocation = (
   const canSelectLevel: Record<number, boolean> = {};
   for (let cardLevel = 1; cardLevel <= characterLevel; cardLevel++) {
     let canSelect = false;
-    
+
     // Check if there's any available slot from cardLevel upward
     for (let slotLevel = cardLevel; slotLevel <= characterLevel; slotLevel++) {
       const slotsAtLevel = baseSlots[slotLevel] ?? 0;
       const usedAtLevel = slotAllocation[slotLevel] ?? 0;
-      
+
       if (usedAtLevel < slotsAtLevel) {
         canSelect = true;
         break;
       }
     }
-    
+
     canSelectLevel[cardLevel] = canSelect;
   }
 
@@ -233,7 +253,7 @@ const canSelectCardOfLevel = (
     choices: Array<{ choice: string }>;
   }>,
   selectedCards: Array<{ cardName: string }>,
-  abilities: Array<{ name: string; level: string }>
+  abilities: Array<{ name: string; level: string }>,
 ): boolean => {
   // Card level cannot be higher than character level
   if (cardLevel > characterLevel) {
@@ -244,7 +264,7 @@ const canSelectCardOfLevel = (
     characterLevel,
     levelHistory,
     selectedCards,
-    abilities
+    abilities,
   );
 
   return canSelectLevel[cardLevel] ?? false;
@@ -258,18 +278,18 @@ const calculateAvailableCardSlotsByLevel = (
     choices: Array<{ choice: string }>;
   }>,
   selectedCards: Array<{ cardName: string }>,
-  abilities: Array<{ name: string; level: string }>
+  abilities: Array<{ name: string; level: string }>,
 ): Record<number, number> => {
   const baseSlots = calculateBaseSlotsByLevel(characterLevel, levelHistory);
-  
+
   // Calculate used slots by level
   const usedSlots: Record<number, number> = {};
   for (let level = 1; level <= characterLevel; level++) {
     usedSlots[level] = 0;
   }
-  
+
   selectedCards.forEach((selectedCard) => {
-    const ability = abilities.find(a => a.name === selectedCard.cardName);
+    const ability = abilities.find((a) => a.name === selectedCard.cardName);
     if (ability) {
       const selectedCardLevel = parseInt(ability.level);
       if (selectedCardLevel <= characterLevel) {
@@ -283,13 +303,14 @@ const calculateAvailableCardSlotsByLevel = (
   const availableSlots: Record<number, number> = {};
   for (let cardLevel = 1; cardLevel <= characterLevel; cardLevel++) {
     let availableForThisLevel = 0;
-    
+
     // Count available slots from this level and above that can be used for this card level
     for (let slotLevel = cardLevel; slotLevel <= characterLevel; slotLevel++) {
-      const slotsAtLevel = (baseSlots[slotLevel] ?? 0) - (usedSlots[slotLevel] ?? 0);
+      const slotsAtLevel =
+        (baseSlots[slotLevel] ?? 0) - (usedSlots[slotLevel] ?? 0);
       availableForThisLevel += Math.max(0, slotsAtLevel);
     }
-    
+
     availableSlots[cardLevel] = availableForThisLevel;
   }
 
@@ -304,24 +325,40 @@ const getActualSlotsByLevel = (
     choices: Array<{ choice: string }>;
   }>,
   selectedCards: Array<{ cardName: string }>,
-  abilities: Array<{ name: string; level: string }>
-): Record<number, { total: number; used: number; available: number; canSelectThisLevel: boolean }> => {
+  abilities: Array<{ name: string; level: string }>,
+): Record<
+  number,
+  {
+    total: number;
+    used: number;
+    available: number;
+    canSelectThisLevel: boolean;
+  }
+> => {
   const baseSlots = calculateBaseSlotsByLevel(characterLevel, levelHistory);
   const { slotAllocation, canSelectLevel } = calculateSlotAllocation(
     characterLevel,
     levelHistory,
     selectedCards,
-    abilities
+    abilities,
   );
 
   // Return actual slots per level with slot allocation information
-  const actualSlots: Record<number, { total: number; used: number; available: number; canSelectThisLevel: boolean }> = {};
+  const actualSlots: Record<
+    number,
+    {
+      total: number;
+      used: number;
+      available: number;
+      canSelectThisLevel: boolean;
+    }
+  > = {};
   for (let level = 1; level <= characterLevel; level++) {
     const total = baseSlots[level] ?? 0;
     const used = slotAllocation[level] ?? 0;
     const available = Math.max(0, total - used);
     const canSelectThisLevel = canSelectLevel[level] ?? false;
-    
+
     actualSlots[level] = { total, used, available, canSelectThisLevel };
   }
 
@@ -822,7 +859,7 @@ export const characterRouter = createTRPCRouter({
       }
 
       // Find the ability to get its level
-      const ability = Abilities.find(a => a.name === input.cardName);
+      const ability = Abilities.find((a) => a.name === input.cardName);
       if (!ability) {
         throw new Error("Invalid card name");
       }
@@ -835,20 +872,24 @@ export const characterRouter = createTRPCRouter({
         character.level,
         character.CharacterLevel,
         character.selectedCards,
-        Abilities
+        Abilities,
       );
 
       if (!canSelect) {
         if (cardLevel > character.level) {
-          throw new Error(`Cannot select level ${cardLevel} card. Character is only level ${character.level}.`);
+          throw new Error(
+            `Cannot select level ${cardLevel} card. Character is only level ${character.level}.`,
+          );
         } else {
           const availableSlots = calculateAvailableCardSlotsByLevel(
             character.level,
             character.CharacterLevel,
             character.selectedCards,
-            Abilities
+            Abilities,
           );
-          throw new Error(`No available slots for level ${cardLevel} cards. Available slots: Level 1: ${availableSlots[1] ?? 0}, Level 2: ${availableSlots[2] ?? 0}, etc.`);
+          throw new Error(
+            `No available slots for level ${cardLevel} cards. Available slots: Level 1: ${availableSlots[1] ?? 0}, Level 2: ${availableSlots[2] ?? 0}, etc.`,
+          );
         }
       }
 
@@ -942,7 +983,7 @@ export const characterRouter = createTRPCRouter({
         character.level,
         character.CharacterLevel,
         character.selectedCards,
-        Abilities
+        Abilities,
       );
 
       // Get actual slots per level (for display)
@@ -950,11 +991,14 @@ export const characterRouter = createTRPCRouter({
         character.level,
         character.CharacterLevel,
         character.selectedCards,
-        Abilities
+        Abilities,
       );
 
       // Calculate total slots
-      const totalAvailableSlots = Object.values(actualSlotsByLevel).reduce((sum, level) => sum + level.total, 0);
+      const totalAvailableSlots = Object.values(actualSlotsByLevel).reduce(
+        (sum, level) => sum + level.total,
+        0,
+      );
       const totalUsedSlots = character.selectedCards.length;
 
       return {

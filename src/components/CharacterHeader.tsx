@@ -106,7 +106,10 @@ export default function CharacterHeader({
                   currentLevel={character.level}
                 >
                   <button className="cursor-pointer">
-                    <Badge variant="secondary" className="bg-sky-500 text-white hover:bg-sky-600 transition-colors">
+                    <Badge
+                      variant="secondary"
+                      className="bg-sky-500 text-white transition-colors hover:bg-sky-600"
+                    >
                       {character.level}
                     </Badge>
                   </button>

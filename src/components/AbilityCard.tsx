@@ -36,7 +36,7 @@ export const AbilityCard = ({
 }: AbilityCardProps) => {
   const getTooltipMessage = () => {
     if (canSelect) return undefined;
-    
+
     const cardLevel = parseInt(level);
     if (characterLevel && cardLevel > characterLevel) {
       return `Card level ${cardLevel} is too high for level ${characterLevel} character`;
@@ -52,22 +52,22 @@ export const AbilityCard = ({
       )}
     >
       {/* Level Badge in top-right corner */}
-      <div className="absolute right-2 top-2 z-10">
+      <div className="absolute top-2 right-2 z-10">
         <Badge variant="secondary" className="bg-purple-600 text-white">
           Level {level}
         </Badge>
       </div>
 
-      <CardHeader className="pb-2 pr-16">
+      <CardHeader className="pr-16 pb-2">
         <CardTitle className="text-lg font-bold text-white">{name}</CardTitle>
         <div className="mt-2">
           <DomainBadge domain={domain} />
         </div>
       </CardHeader>
-      
+
       <CardContent className="flex flex-1 flex-col justify-between">
         <p className="text-sm text-slate-300">{text}</p>
-        
+
         <div className="mt-4 space-y-3">
           {/* Token visualization */}
           <div className="flex gap-2">
@@ -99,7 +99,8 @@ export const AbilityCard = ({
                   variant="outline"
                   className={cn(
                     "border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-white",
-                    !canSelect && "border-slate-600 text-slate-500 opacity-50 cursor-not-allowed"
+                    !canSelect &&
+                      "cursor-not-allowed border-slate-600 text-slate-500 opacity-50",
                   )}
                   title={getTooltipMessage()}
                 >

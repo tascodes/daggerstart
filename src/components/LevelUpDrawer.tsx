@@ -264,7 +264,9 @@ export default function LevelUpDrawer({
           </div>
 
           {/* Show automatic bonuses for levels 2, 5, 8 */}
-          {(currentLevel + 1 === 2 || currentLevel + 1 === 5 || currentLevel + 1 === 8) && (
+          {(currentLevel + 1 === 2 ||
+            currentLevel + 1 === 5 ||
+            currentLevel + 1 === 8) && (
             <div className="mb-4 rounded-lg border border-yellow-600 bg-yellow-900/20 p-4">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-yellow-400">
                 <Star className="h-4 w-4" />

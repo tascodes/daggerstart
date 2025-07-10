@@ -45,9 +45,9 @@ export default function CharacterLayout({
   const pathname = usePathname();
 
   // Use client-side query
-  const { data: character } = api.character.getById.useQuery(
-    { id: characterId }
-  );
+  const { data: character } = api.character.getById.useQuery({
+    id: characterId,
+  });
 
   // Use server character as fallback until client query loads
   const currentCharacter = character ?? initialCharacter;
@@ -85,7 +85,9 @@ export default function CharacterLayout({
         <div className="mb-8 flex items-center justify-between">
           <Link
             href={
-              currentCharacter.game ? `/campaigns/${currentCharacter.game.id}` : "/characters"
+              currentCharacter.game
+                ? `/campaigns/${currentCharacter.game.id}`
+                : "/characters"
             }
           >
             <Button
@@ -93,7 +95,9 @@ export default function CharacterLayout({
               className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {currentCharacter.game ? "Back to Campaign" : "Back to Characters"}
+              {currentCharacter.game
+                ? "Back to Campaign"
+                : "Back to Characters"}
             </Button>
           </Link>
 

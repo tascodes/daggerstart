@@ -38,9 +38,8 @@ export default function CharacterCardsClient({
   const isOwner = character.user.id === session?.user.id;
 
   // Fetch selected cards data
-  const { data: cardData, refetch: refetchCards } = api.character.getSelectedCards.useQuery(
-    { id: characterId }
-  );
+  const { data: cardData, refetch: refetchCards } =
+    api.character.getSelectedCards.useQuery({ id: characterId });
 
   const utils = api.useUtils();
 
@@ -87,21 +86,22 @@ export default function CharacterCardsClient({
       if (levelA !== levelB) {
         return levelA - levelB;
       }
-      
+
       // Then sort by domain alphabetically
       return a.domain.localeCompare(b.domain);
     });
   }, [character?.class, character?.level]);
 
-  const selectedCardNames = cardData?.selectedCards?.map(card => card.cardName) ?? [];
-  
+  const selectedCardNames =
+    cardData?.selectedCards?.map((card) => card.cardName) ?? [];
+
   // Separate selected and available cards
-  const selectedAbilities = characterAbilities.filter(ability => 
-    selectedCardNames.includes(ability.name)
+  const selectedAbilities = characterAbilities.filter((ability) =>
+    selectedCardNames.includes(ability.name),
   );
-  
-  const availableAbilities = characterAbilities.filter(ability => 
-    !selectedCardNames.includes(ability.name)
+
+  const availableAbilities = characterAbilities.filter(
+    (ability) => !selectedCardNames.includes(ability.name),
   );
 
   const handleSelectCard = (cardName: string) => {
@@ -120,21 +120,23 @@ export default function CharacterCardsClient({
 
   // Check if a specific card can be selected based on level validation
   const canSelectCard = (ability: Ability) => {
-    if (!cardData?.availableSlotsByLevel) return false;
-    
+    if (!cardData?.actualSlotsByLevel) return false;
+
     const cardLevel = parseInt(ability.level);
-    
+
     // Card level cannot be higher than character level
     if (cardLevel > character.level) {
       return false;
     }
-    
-    // Check if we have slots available for this card level (including higher level slots)
-    const availableForLevel = cardData.availableSlotsByLevel[cardLevel] ?? 0;
-    return availableForLevel > 0;
+
+    // Check if we can select cards of this level (considering slot blocking)
+    const levelInfo = cardData.actualSlotsByLevel[cardLevel];
+    return levelInfo?.canSelectThisLevel ?? false;
   };
 
-  const canSelectMore = cardData ? cardData.usedSlots < cardData.availableSlots : false;
+  const canSelectMore = cardData
+    ? cardData.usedSlots < cardData.availableSlots
+    : false;
 
   if (!character) {
     return null; // Layout will handle the not found case
@@ -154,32 +156,34 @@ export default function CharacterCardsClient({
             </div>
             {!canSelectMore && isOwner && (
               <p className="text-sm text-yellow-400">
-                All card slots filled! Level up or choose Domain Cards to get more slots.
+                All card slots filled! Level up or choose Domain Cards to get
+                more slots.
               </p>
             )}
           </div>
-          
+
           {/* Show actual slots by level */}
           {cardData?.actualSlotsByLevel && (
             <div className="space-y-2">
               <p className="text-sm text-slate-300">
-                Card slots by level (higher level slots can be used for lower level cards):
+                Card slots by level (higher level slots can be used for lower
+                level cards):
               </p>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(cardData.actualSlotsByLevel)
-                  .map(([level, slotInfo]) => (
-                    <Badge 
-                      key={level} 
-                      variant="outline" 
+                {Object.entries(cardData.actualSlotsByLevel).map(
+                  ([level, slotInfo]) => (
+                    <Badge
+                      key={level}
+                      variant="outline"
                       className={cn(
-                        slotInfo.canSelectThisLevel 
-                          ? "border-green-500 text-green-300" 
-                          : slotInfo.available > 0 
-                            ? "border-purple-500 text-purple-300" 
-                            : "border-red-500 text-red-400"
+                        slotInfo.canSelectThisLevel
+                          ? "border-green-500 text-green-300"
+                          : slotInfo.available > 0
+                            ? "border-purple-500 text-purple-300"
+                            : "border-red-500 text-red-400",
                       )}
                       title={
-                        !slotInfo.canSelectThisLevel 
+                        !slotInfo.canSelectThisLevel
                           ? `Level ${level} cards blocked - no available slots at this level or higher`
                           : undefined
                       }
@@ -187,11 +191,14 @@ export default function CharacterCardsClient({
                       L{level}: {slotInfo.used}/{slotInfo.total}
                       {!slotInfo.canSelectThisLevel && " 🚫"}
                     </Badge>
-                  ))}
+                  ),
+                )}
               </div>
-              <div className="mt-2 text-xs text-slate-400 space-y-1">
+              <div className="mt-2 space-y-1 text-xs text-slate-400">
                 <p>🟢 Green: Can select cards of this level</p>
-                <p>🟣 Purple: Slots available but cards of this level blocked</p>
+                <p>
+                  🟣 Purple: Slots available but cards of this level blocked
+                </p>
                 <p>🔴 Red: No slots available at this level</p>
               </div>
             </div>
@@ -231,10 +238,9 @@ export default function CharacterCardsClient({
         </h2>
         {availableAbilities.length === 0 ? (
           <p className="text-center text-slate-400">
-            {selectedAbilities.length > 0 
+            {selectedAbilities.length > 0
               ? "All available cards have been selected."
-              : "No abilities available for this character's domains and level."
-            }
+              : "No abilities available for this character's domains and level."}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
