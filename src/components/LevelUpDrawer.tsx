@@ -39,7 +39,8 @@ export default function LevelUpDrawer({
     {
       id: "traits",
       name: "Character Traits",
-      description: "Gain a +1 bonus to two unmarked character traits and mark them.",
+      description:
+        "Gain a +1 bonus to two unmarked character traits and mark them.",
       maxSelections: 3,
       currentSelections: 0,
     },
@@ -67,7 +68,8 @@ export default function LevelUpDrawer({
     {
       id: "domain",
       name: "Domain Card",
-      description: "Choose an additional domain card of your level or lower from a domain you have access to (up to level 4).",
+      description:
+        "Choose an additional domain card of your level or lower from a domain you have access to (up to level 4).",
       maxSelections: 1,
       currentSelections: 0,
     },
@@ -81,15 +83,18 @@ export default function LevelUpDrawer({
   ];
 
   // Count how many times each option has been selected
-  const optionCounts = selectedOptions.reduce((acc, optionId) => {
-    acc[optionId] = (acc[optionId] ?? 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const optionCounts = selectedOptions.reduce(
+    (acc, optionId) => {
+      acc[optionId] = (acc[optionId] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   const handleOptionAdd = (optionId: string) => {
     const currentCount = optionCounts[optionId] ?? 0;
     const option = levelUpOptions.find((opt) => opt.id === optionId);
-    
+
     if (!option) return;
 
     // If we can still select more of this option and have room for selections
@@ -100,7 +105,7 @@ export default function LevelUpDrawer({
 
   const handleOptionRemove = (optionId: string) => {
     const currentCount = optionCounts[optionId] ?? 0;
-    
+
     if (currentCount > 0) {
       // Remove one selection of this option
       const index = selectedOptions.findIndex((id) => id === optionId);
@@ -117,13 +122,13 @@ export default function LevelUpDrawer({
     if (!option) return true;
 
     const currentCount = optionCounts[optionId] ?? 0;
-    
+
     // Disable if we've reached the max selections for this option
     if (currentCount >= option.maxSelections) return true;
-    
+
     // Disable if we already have 2 total selections
     if (selectedOptions.length >= 2) return true;
-    
+
     return false;
   };
 
@@ -139,7 +144,7 @@ export default function LevelUpDrawer({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
+        <Button
           className="bg-yellow-600 text-white hover:bg-yellow-700"
           size="sm"
         >
@@ -160,7 +165,8 @@ export default function LevelUpDrawer({
         <div className="flex flex-1 flex-col overflow-hidden px-6">
           <div className="mb-4">
             <p className="text-sm text-slate-400">
-              Select 2 bonuses for leveling up. Some options can be selected multiple times.
+              Select 2 bonuses for leveling up. Some options can be selected
+              multiple times.
             </p>
             <p className="mt-2 text-sm font-medium text-sky-400">
               Selections: {selectedOptions.length}/2
@@ -172,7 +178,7 @@ export default function LevelUpDrawer({
               const currentCount = optionCounts[option.id] ?? 0;
               const isAddDisabled = isOptionDisabled(option.id);
               const isRemoveDisabled = currentCount === 0;
-              
+
               return (
                 <div
                   key={option.id}
@@ -180,7 +186,7 @@ export default function LevelUpDrawer({
                     "relative w-full rounded-lg border p-4 transition-all",
                     currentCount > 0
                       ? "border-sky-500 bg-slate-700"
-                      : "border-slate-600 bg-slate-900"
+                      : "border-slate-600 bg-slate-900",
                   )}
                 >
                   <div className="flex items-start justify-between">
@@ -216,7 +222,7 @@ export default function LevelUpDrawer({
                             "rounded-full p-1 transition-all",
                             isRemoveDisabled
                               ? "cursor-not-allowed opacity-30"
-                              : "bg-red-600 text-white hover:bg-red-700"
+                              : "bg-red-600 text-white hover:bg-red-700",
                           )}
                         >
                           <Minus className="h-4 w-4" />
@@ -228,7 +234,7 @@ export default function LevelUpDrawer({
                             "rounded-full p-1 transition-all",
                             isAddDisabled
                               ? "cursor-not-allowed opacity-30"
-                              : "bg-green-600 text-white hover:bg-green-700"
+                              : "bg-green-600 text-white hover:bg-green-700",
                           )}
                         >
                           <Plus className="h-4 w-4" />

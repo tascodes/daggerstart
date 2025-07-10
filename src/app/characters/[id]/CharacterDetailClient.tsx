@@ -49,91 +49,89 @@ export default function CharacterDetailClient({
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/* Abilities Section */}
+      <div className="mb-8">
+        <CharacterAbilities
+          character={character}
+          isOwner={isOwner}
+          game={character.game}
+          onUpdate={() => void refetch()}
+        />
+      </div>
 
-        {/* Abilities Section */}
-        <div className="mb-8">
-          <CharacterAbilities
-            character={character}
-            isOwner={isOwner}
-            game={character.game}
-            onUpdate={() => void refetch()}
+      {/* Health Section */}
+      <div className="mb-8">
+        <HealthSection
+          character={character}
+          isOwner={isOwner}
+          onUpdate={() => void refetch()}
+        />
+      </div>
+
+      {/* Defense Section */}
+      <div className="mb-8">
+        <DefenseSection
+          character={character}
+          isOwner={isOwner}
+          onUpdate={() => void refetch()}
+        />
+      </div>
+
+      {/* Gold Section */}
+      <div className="mb-8">
+        <GoldSection
+          character={character}
+          isOwner={isOwner}
+          onUpdate={() => void refetch()}
+        />
+      </div>
+
+      {/* Fear Section - Show GM's Fear if character is in a game */}
+      {character.gameId && (
+        <div className="mb-8 w-fit rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+          <h3 className="mb-4 text-lg font-bold text-white">Fear</h3>
+          <FearBar
+            value={fearCount ?? 0}
+            maxValue={12}
+            onValueChange={() => {}} // Read-only, no edit functionality
+            readonly={true}
+          />
+        </div>
+      )}
+
+      {/* Character Details Grid */}
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Experiences Section */}
+        <div>
+          <CharacterExperiences
+            experience1={character.experience1}
+            experience2={character.experience2}
           />
         </div>
 
-        {/* Health Section */}
-        <div className="mb-8">
-          <HealthSection
-            character={character}
-            isOwner={isOwner}
-            onUpdate={() => void refetch()}
-          />
-        </div>
+        {/* Additional Info Section */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
+          <h2 className="mb-4 text-xl font-bold text-white">
+            Additional Details
+          </h2>
 
-        {/* Defense Section */}
-        <div className="mb-8">
-          <DefenseSection
-            character={character}
-            isOwner={isOwner}
-            onUpdate={() => void refetch()}
-          />
-        </div>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-400">Community</p>
+              <p className="font-medium text-white capitalize">
+                {character.community}
+              </p>
+            </div>
 
-        {/* Gold Section */}
-        <div className="mb-8">
-          <GoldSection
-            character={character}
-            isOwner={isOwner}
-            onUpdate={() => void refetch()}
-          />
-        </div>
-
-        {/* Fear Section - Show GM's Fear if character is in a game */}
-        {character.gameId && (
-          <div className="mb-8 w-fit rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
-            <h3 className="mb-4 text-lg font-bold text-white">Fear</h3>
-            <FearBar
-              value={fearCount ?? 0}
-              maxValue={12}
-              onValueChange={() => {}} // Read-only, no edit functionality
-              readonly={true}
-            />
-          </div>
-        )}
-
-        {/* Character Details Grid */}
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Experiences Section */}
-          <div>
-            <CharacterExperiences
-              experience1={character.experience1}
-              experience2={character.experience2}
-            />
-          </div>
-
-          {/* Additional Info Section */}
-          <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-bold text-white">
-              Additional Details
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-slate-400">Community</p>
-                <p className="font-medium text-white capitalize">
-                  {character.community}
-                </p>
-              </div>
-
-              {/* Future sections can be added here */}
-              <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
-                <p className="text-center text-slate-400">
-                  More character details coming soon...
-                </p>
-              </div>
+            {/* Future sections can be added here */}
+            <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
+              <p className="text-center text-slate-400">
+                More character details coming soon...
+              </p>
             </div>
           </div>
         </div>
-
+      </div>
     </div>
   );
 }

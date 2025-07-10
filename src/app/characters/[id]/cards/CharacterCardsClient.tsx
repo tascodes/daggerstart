@@ -55,31 +55,28 @@ export default function CharacterCardsClient({
 
   return (
     <div className="mx-auto max-w-6xl">
-
-        {/* Cards Content */}
-        <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 shadow-lg">
-          <h2 className="mb-6 text-2xl font-bold text-white">
-            Available Abilities
-          </h2>
-          {characterAbilities.length === 0 ? (
-            <p className="text-center text-slate-400">
-              No abilities available for this character&apos;s domains and
-              level.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {characterAbilities.map((ability: Ability, index: number) => (
-                <AbilityCard
-                  key={index}
-                  name={ability.name}
-                  text={ability.text}
-                  tokens={0}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
+      {/* Cards Content */}
+      <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 shadow-lg">
+        <h2 className="mb-6 text-2xl font-bold text-white">
+          Available Abilities
+        </h2>
+        {characterAbilities.length === 0 ? (
+          <p className="text-center text-slate-400">
+            No abilities available for this character&apos;s domains and level.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {characterAbilities.map((ability: Ability, index: number) => (
+              <AbilityCard
+                key={index}
+                name={ability.name}
+                text={ability.text}
+                tokens={0}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -9,12 +9,15 @@ export default async function CharacterCardsPage({
   params,
 }: CharacterCardsPageProps) {
   const resolvedParams = await params;
-  
+
   try {
     const character = await api.character.getById({ id: resolvedParams.id });
 
     return (
-      <CharacterCardsClient characterId={resolvedParams.id} character={character} />
+      <CharacterCardsClient
+        characterId={resolvedParams.id}
+        character={character}
+      />
     );
   } catch (err) {
     console.error("Error fetching character:", err);

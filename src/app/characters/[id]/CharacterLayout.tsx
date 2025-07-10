@@ -87,7 +87,7 @@ export default function CharacterLayout({
               {character.game ? "Back to Campaign" : "Back to Characters"}
             </Button>
           </Link>
-          
+
           {/* Level Up Button */}
           {character.level < 10 && (
             <LevelUpDrawer
