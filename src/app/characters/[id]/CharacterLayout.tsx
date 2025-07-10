@@ -75,7 +75,7 @@ export default function CharacterLayout({
         <div className="mb-8 flex items-center gap-4">
           <Link
             href={
-              character.game ? `/games/${character.game.id}` : "/characters"
+              character.game ? `/campaigns/${character.game.id}` : "/characters"
             }
           >
             <Button
@@ -83,7 +83,7 @@ export default function CharacterLayout({
               className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {character.game ? "Back to Game" : "Back to Characters"}
+              {character.game ? "Back to Campaign" : "Back to Characters"}
             </Button>
           </Link>
         </div>
