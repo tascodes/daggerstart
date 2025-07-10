@@ -133,6 +133,7 @@ model Character {
 
     diceRolls      DiceRoll[]
     CharacterLevel CharacterLevel[]
+    selectedCards  SelectedCard[]
 
     @@index([userId])
     @@index([gameId])
@@ -274,4 +275,17 @@ model CharacterLevelExperienceIncrease {
     experience       String
 
     @@index([characterLevelId])
+}
+
+model SelectedCard {
+    id          String    @id @default(cuid())
+    cardName    String    // Name of the ability/card
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+    characterId String
+
+    @@unique([characterId, cardName])
+    @@index([characterId])
 }

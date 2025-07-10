@@ -24,7 +24,7 @@ interface Character {
     name: string | null;
     image: string | null;
   };
-  game?: {
+  game: {
     id: string;
     name: string;
   } | null;
@@ -44,13 +44,15 @@ export default function CharacterLayout({
   const { data: session } = useSession();
   const pathname = usePathname();
 
-  // Use client-side query with server data as initial data
+  // Use client-side query
   const { data: character } = api.character.getById.useQuery(
-    { id: characterId },
-    { initialData: initialCharacter }
+    { id: characterId }
   );
 
-  if (!character) {
+  // Use server character as fallback until client query loads
+  const currentCharacter = character ?? initialCharacter;
+
+  if (!currentCharacter) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-900">
         <div className="text-center">
@@ -66,7 +68,7 @@ export default function CharacterLayout({
     );
   }
 
-  const isOwner = character.user.id === session?.user.id;
+  const isOwner = currentCharacter.user.id === session?.user.id;
 
   // Determine active tab based on pathname
   const getActiveTab = () => {
@@ -83,7 +85,7 @@ export default function CharacterLayout({
         <div className="mb-8 flex items-center justify-between">
           <Link
             href={
-              character.game ? `/campaigns/${character.game.id}` : "/characters"
+              currentCharacter.game ? `/campaigns/${currentCharacter.game.id}` : "/characters"
             }
           >
             <Button
@@ -91,16 +93,16 @@ export default function CharacterLayout({
               className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {character.game ? "Back to Campaign" : "Back to Characters"}
+              {currentCharacter.game ? "Back to Campaign" : "Back to Characters"}
             </Button>
           </Link>
 
           {/* Level Up Button */}
-          {character.level < 10 && (
+          {currentCharacter.level < 10 && (
             <LevelUpDrawer
-              characterId={character.id}
-              currentLevel={character.level}
-              characterName={character.name}
+              characterId={currentCharacter.id}
+              currentLevel={currentCharacter.level}
+              characterName={currentCharacter.name}
               isOwner={isOwner}
             />
           )}
@@ -108,7 +110,7 @@ export default function CharacterLayout({
 
         {/* Character Header */}
         <div className="mb-8">
-          <CharacterHeader character={character} isOwner={isOwner} />
+          <CharacterHeader character={currentCharacter} isOwner={isOwner} />
         </div>
 
         {/* Navigation Tabs */}
@@ -120,7 +122,7 @@ export default function CharacterLayout({
         {children}
 
         {/* Floating Dice Rolls */}
-        <FloatingDiceRolls gameId={character.game?.id} />
+        <FloatingDiceRolls gameId={currentCharacter.game?.id} />
       </div>
     </div>
   );

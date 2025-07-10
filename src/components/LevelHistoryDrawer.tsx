@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
-import { TrendingUp, CheckCircle, Award } from "lucide-react";
+import { TrendingUp, CheckCircle, Award, Star } from "lucide-react";
 import { api } from "~/trpc/react";
 
 interface LevelHistoryDrawerProps {
@@ -71,7 +71,19 @@ export default function LevelHistoryDrawer({
               {/* Show levels 1 through current level */}
               {Array.from({ length: currentLevel }, (_, i) => i + 1).map((level) => {
                 const levelData = levelHistory?.find((l) => l.level === level);
-                const isSpecialLevel = level === 5 || level === 8;
+                
+                // Determine tier label
+                const getTierLabel = (level: number): string | null => {
+                  switch (level) {
+                    case 1: return "Tier 1";
+                    case 2: return "Tier 2";
+                    case 5: return "Tier 3";
+                    case 8: return "Tier 4";
+                    default: return null;
+                  }
+                };
+                
+                const tierLabel = getTierLabel(level);
 
                 return (
                   <div
@@ -81,18 +93,14 @@ export default function LevelHistoryDrawer({
                     <div className="mb-3 flex items-center gap-2">
                       <Badge
                         variant="secondary"
-                        className={`${
-                          isSpecialLevel
-                            ? "bg-yellow-600 text-white"
-                            : "bg-sky-500 text-white"
-                        }`}
+                        className="bg-sky-500 text-white"
                       >
                         Level {level}
                       </Badge>
-                      {isSpecialLevel && (
-                        <div className="flex items-center gap-1 text-xs text-yellow-400">
+                      {tierLabel && (
+                        <div className="flex items-center gap-1 text-xs text-purple-400">
                           <Award className="h-4 w-4" />
-                          Traits Unmarked
+                          {tierLabel}
                         </div>
                       )}
                     </div>
@@ -119,6 +127,25 @@ export default function LevelHistoryDrawer({
                         ) : (
                           <div className="text-sm text-slate-400">
                             No level-up choices recorded
+                          </div>
+                        )}
+
+                        {/* Show automatic bonuses for levels 2, 5, 8 */}
+                        {(level === 2 || level === 5 || level === 8) && (
+                          <div className="mt-3">
+                            <h4 className="text-sm font-semibold text-white">
+                              Automatic Bonuses:
+                            </h4>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm text-slate-300">
+                                <Star className="h-4 w-4 text-yellow-400" />
+                                Gain an additional Experience at +2
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-slate-300">
+                                <Star className="h-4 w-4 text-yellow-400" />
+                                Gain a +1 bonus to Proficiency
+                              </div>
+                            </div>
                           </div>
                         )}
 

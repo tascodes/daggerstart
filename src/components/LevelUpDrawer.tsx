@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { TrendingUp, CheckCircle2, Plus, Minus } from "lucide-react";
+import { TrendingUp, CheckCircle2, Plus, Minus, Star } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -41,7 +41,7 @@ export default function LevelUpDrawer({
   // Fetch character level history to count previous choices
   const { data: levelHistory } = api.character.getLevelHistory.useQuery(
     { id: characterId },
-    { enabled: open }
+    { enabled: open },
   );
 
   const utils = api.useUtils();
@@ -51,7 +51,7 @@ export default function LevelUpDrawer({
       // Invalidate and refetch character data and level history
       void utils.character.getById.invalidate({ id: characterId });
       void utils.character.getLevelHistory.invalidate({ id: characterId });
-      
+
       setOpen(false);
       setSelectedOptions([]);
     },
@@ -79,7 +79,7 @@ export default function LevelUpDrawer({
     // Determine the level bracket for the next level (where they're leveling TO)
     const nextLevel = currentLevel + 1;
     let bracketStart: number;
-    
+
     if (nextLevel >= 2 && nextLevel <= 4) {
       bracketStart = 2;
     } else if (nextLevel >= 5 && nextLevel <= 7) {
@@ -94,7 +94,11 @@ export default function LevelUpDrawer({
     // Only count choices made within the current bracket
     return levelHistory.reduce((count, level) => {
       if (level.level >= bracketStart && level.level < nextLevel) {
-        return count + level.choices.filter(choice => choice.choice === dbChoiceType).length;
+        return (
+          count +
+          level.choices.filter((choice) => choice.choice === dbChoiceType)
+            .length
+        );
       }
       return count;
     }, 0);
@@ -142,7 +146,7 @@ export default function LevelUpDrawer({
   ];
 
   // Build level up options with current selections from previous levels
-  const levelUpOptions: LevelUpOption[] = baseLevelUpOptions.map(option => ({
+  const levelUpOptions: LevelUpOption[] = baseLevelUpOptions.map((option) => ({
     ...option,
     currentSelections: getPreviousChoiceCount(option.id),
   }));
@@ -163,10 +167,14 @@ export default function LevelUpDrawer({
     if (!option) return;
 
     const totalPreviousSelections = option.currentSelections;
-    const totalCurrentAndPreviousSelections = totalPreviousSelections + currentCount;
+    const totalCurrentAndPreviousSelections =
+      totalPreviousSelections + currentCount;
 
     // If we can still select more of this option (considering previous levels) and have room for selections
-    if (totalCurrentAndPreviousSelections < option.maxSelections && selectedOptions.length < 2) {
+    if (
+      totalCurrentAndPreviousSelections < option.maxSelections &&
+      selectedOptions.length < 2
+    ) {
       setSelectedOptions([...selectedOptions, optionId]);
     }
   };
@@ -191,7 +199,8 @@ export default function LevelUpDrawer({
 
     const currentCount = optionCounts[optionId] ?? 0;
     const totalPreviousSelections = option.currentSelections;
-    const totalCurrentAndPreviousSelections = totalPreviousSelections + currentCount;
+    const totalCurrentAndPreviousSelections =
+      totalPreviousSelections + currentCount;
 
     // Disable if we've reached the max selections for this option (including previous levels)
     if (totalCurrentAndPreviousSelections >= option.maxSelections) return true;
@@ -209,7 +218,14 @@ export default function LevelUpDrawer({
 
     levelUpMutation.mutate({
       characterId,
-      choices: selectedOptions as ("traits" | "hitpoints" | "stress" | "experiences" | "domain" | "evasion")[],
+      choices: selectedOptions as (
+        | "traits"
+        | "hitpoints"
+        | "stress"
+        | "experiences"
+        | "domain"
+        | "evasion"
+      )[],
     });
   };
 
@@ -247,6 +263,26 @@ export default function LevelUpDrawer({
             </p>
           </div>
 
+          {/* Show automatic bonuses for levels 2, 5, 8 */}
+          {(currentLevel + 1 === 2 || currentLevel + 1 === 5 || currentLevel + 1 === 8) && (
+            <div className="mb-4 rounded-lg border border-yellow-600 bg-yellow-900/20 p-4">
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-yellow-400">
+                <Star className="h-4 w-4" />
+                Automatic Bonuses (Level {currentLevel + 1})
+              </h4>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Star className="h-4 w-4 text-yellow-400" />
+                  Gain an additional Experience at +2
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Star className="h-4 w-4 text-yellow-400" />
+                  Gain a +1 bonus to Proficiency
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 space-y-3 overflow-y-auto">
             {levelUpOptions.map((option) => {
               const currentCount = optionCounts[option.id] ?? 0;
@@ -269,14 +305,17 @@ export default function LevelUpDrawer({
                         {option.name}
                         {option.maxSelections > 1 && (
                           <span className="ml-2 text-sm text-slate-400">
-                            ({currentCount}/{option.maxSelections - option.currentSelections} remaining)
+                            ({currentCount}/
+                            {option.maxSelections - option.currentSelections}{" "}
+                            remaining)
                           </span>
                         )}
-                        {option.maxSelections === 1 && option.currentSelections > 0 && (
-                          <span className="ml-2 text-sm text-red-400">
-                            (Already selected)
-                          </span>
-                        )}
+                        {option.maxSelections === 1 &&
+                          option.currentSelections > 0 && (
+                            <span className="ml-2 text-sm text-red-400">
+                              (Already selected)
+                            </span>
+                          )}
                       </h4>
                       <p className="mt-1 text-sm text-slate-300">
                         {option.description}
@@ -329,10 +368,14 @@ export default function LevelUpDrawer({
           <div className="mt-6 flex gap-3 pb-8">
             <Button
               onClick={handleConfirmLevelUp}
-              disabled={selectedOptions.length !== 2 || levelUpMutation.isPending}
+              disabled={
+                selectedOptions.length !== 2 || levelUpMutation.isPending
+              }
               className="flex-1 bg-sky-500 text-white hover:bg-sky-600 disabled:bg-slate-700 disabled:text-slate-400"
             >
-              {levelUpMutation.isPending ? "Leveling Up..." : "Confirm Level Up"}
+              {levelUpMutation.isPending
+                ? "Leveling Up..."
+                : "Confirm Level Up"}
             </Button>
             <Button
               onClick={() => {
