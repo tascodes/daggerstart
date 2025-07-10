@@ -10,7 +10,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { TrendingUp, CheckCircle2 } from "lucide-react";
+import { TrendingUp, CheckCircle2, Plus, Minus } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 interface LevelUpOption {
@@ -86,12 +86,21 @@ export default function LevelUpDrawer({
     return acc;
   }, {} as Record<string, number>);
 
-  const handleOptionToggle = (optionId: string) => {
+  const handleOptionAdd = (optionId: string) => {
     const currentCount = optionCounts[optionId] || 0;
     const option = levelUpOptions.find((opt) => opt.id === optionId);
     
     if (!option) return;
 
+    // If we can still select more of this option and have room for selections
+    if (currentCount < option.maxSelections && selectedOptions.length < 2) {
+      setSelectedOptions([...selectedOptions, optionId]);
+    }
+  };
+
+  const handleOptionRemove = (optionId: string) => {
+    const currentCount = optionCounts[optionId] || 0;
+    
     if (currentCount > 0) {
       // Remove one selection of this option
       const index = selectedOptions.findIndex((id) => id === optionId);
@@ -100,9 +109,6 @@ export default function LevelUpDrawer({
         newSelections.splice(index, 1);
         setSelectedOptions(newSelections);
       }
-    } else if (selectedOptions.length < 2 && currentCount < option.maxSelections) {
-      // Add this option
-      setSelectedOptions([...selectedOptions, optionId]);
     }
   };
 
@@ -115,8 +121,8 @@ export default function LevelUpDrawer({
     // Disable if we've reached the max selections for this option
     if (currentCount >= option.maxSelections) return true;
     
-    // Disable if we already have 2 selections and this option isn't already selected
-    if (selectedOptions.length >= 2 && currentCount === 0) return true;
+    // Disable if we already have 2 total selections
+    if (selectedOptions.length >= 2) return true;
     
     return false;
   };
@@ -141,8 +147,8 @@ export default function LevelUpDrawer({
           Level Up
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-full border-slate-700 bg-slate-800 text-white sm:max-w-lg">
-        <SheetHeader className="mb-6">
+      <SheetContent className="flex w-full flex-col border-slate-700 bg-slate-800 text-white sm:max-w-lg">
+        <SheetHeader className="mb-6 px-6 pt-6">
           <SheetTitle className="text-2xl font-bold text-white">
             Level Up {characterName}
           </SheetTitle>
@@ -151,7 +157,7 @@ export default function LevelUpDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-4">
+        <div className="flex flex-1 flex-col overflow-hidden px-6">
           <div className="mb-4">
             <p className="text-sm text-slate-400">
               Select 2 bonuses for leveling up. Some options can be selected multiple times.
@@ -161,22 +167,20 @@ export default function LevelUpDrawer({
             </p>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex-1 space-y-3 overflow-y-auto">
             {levelUpOptions.map((option) => {
               const currentCount = optionCounts[option.id] || 0;
-              const isDisabled = isOptionDisabled(option.id);
+              const isAddDisabled = isOptionDisabled(option.id);
+              const isRemoveDisabled = currentCount === 0;
               
               return (
-                <button
+                <div
                   key={option.id}
-                  onClick={() => handleOptionToggle(option.id)}
-                  disabled={isDisabled}
                   className={cn(
-                    "relative w-full rounded-lg border p-4 text-left transition-all",
+                    "relative w-full rounded-lg border p-4 transition-all",
                     currentCount > 0
                       ? "border-sky-500 bg-slate-700"
-                      : "border-slate-600 bg-slate-900 hover:border-slate-500 hover:bg-slate-800",
-                    isDisabled && currentCount === 0 && "cursor-not-allowed opacity-50"
+                      : "border-slate-600 bg-slate-900"
                   )}
                 >
                   <div className="flex items-start justify-between">
@@ -193,23 +197,51 @@ export default function LevelUpDrawer({
                         {option.description}
                       </p>
                     </div>
-                    {currentCount > 0 && (
-                      <div className="ml-3 flex items-center">
-                        <CheckCircle2 className="h-5 w-5 text-sky-500" />
-                        {currentCount > 1 && (
-                          <span className="ml-1 text-sm font-medium text-sky-500">
-                            x{currentCount}
-                          </span>
-                        )}
+                    <div className="ml-3 flex items-center gap-2">
+                      {currentCount > 0 && (
+                        <div className="flex items-center">
+                          <CheckCircle2 className="h-5 w-5 text-sky-500" />
+                          {currentCount > 1 && (
+                            <span className="ml-1 text-sm font-medium text-sky-500">
+                              x{currentCount}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOptionRemove(option.id)}
+                          disabled={isRemoveDisabled}
+                          className={cn(
+                            "rounded-full p-1 transition-all",
+                            isRemoveDisabled
+                              ? "cursor-not-allowed opacity-30"
+                              : "bg-red-600 text-white hover:bg-red-700"
+                          )}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOptionAdd(option.id)}
+                          disabled={isAddDisabled}
+                          className={cn(
+                            "rounded-full p-1 transition-all",
+                            isAddDisabled
+                              ? "cursor-not-allowed opacity-30"
+                              : "bg-green-600 text-white hover:bg-green-700"
+                          )}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
 
-          <div className="mt-8 flex gap-3">
+          <div className="mt-6 flex gap-3 pb-8">
             <Button
               onClick={handleConfirmLevelUp}
               disabled={selectedOptions.length !== 2}
