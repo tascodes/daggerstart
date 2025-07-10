@@ -82,12 +82,12 @@ export default function LevelUpDrawer({
 
   // Count how many times each option has been selected
   const optionCounts = selectedOptions.reduce((acc, optionId) => {
-    acc[optionId] = (acc[optionId] || 0) + 1;
+    acc[optionId] = (acc[optionId] ?? 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   const handleOptionAdd = (optionId: string) => {
-    const currentCount = optionCounts[optionId] || 0;
+    const currentCount = optionCounts[optionId] ?? 0;
     const option = levelUpOptions.find((opt) => opt.id === optionId);
     
     if (!option) return;
@@ -99,7 +99,7 @@ export default function LevelUpDrawer({
   };
 
   const handleOptionRemove = (optionId: string) => {
-    const currentCount = optionCounts[optionId] || 0;
+    const currentCount = optionCounts[optionId] ?? 0;
     
     if (currentCount > 0) {
       // Remove one selection of this option
@@ -116,7 +116,7 @@ export default function LevelUpDrawer({
     const option = levelUpOptions.find((opt) => opt.id === optionId);
     if (!option) return true;
 
-    const currentCount = optionCounts[optionId] || 0;
+    const currentCount = optionCounts[optionId] ?? 0;
     
     // Disable if we've reached the max selections for this option
     if (currentCount >= option.maxSelections) return true;
@@ -169,7 +169,7 @@ export default function LevelUpDrawer({
 
           <div className="flex-1 space-y-3 overflow-y-auto">
             {levelUpOptions.map((option) => {
-              const currentCount = optionCounts[option.id] || 0;
+              const currentCount = optionCounts[option.id] ?? 0;
               const isAddDisabled = isOptionDisabled(option.id);
               const isRemoveDisabled = currentCount === 0;
               
