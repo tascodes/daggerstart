@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import CharacterHeader from "~/components/CharacterHeader";
 import CharacterTabs from "~/components/CharacterTabs";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
+import LevelUpDrawer from "~/components/LevelUpDrawer";
 import { usePathname } from "next/navigation";
 
 interface Character {
@@ -72,7 +73,7 @@ export default function CharacterLayout({
     <div className="min-h-screen bg-slate-900 py-8">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header with Back Button */}
-        <div className="mb-8 flex items-center gap-4">
+        <div className="mb-8 flex items-center justify-between">
           <Link
             href={
               character.game ? `/campaigns/${character.game.id}` : "/characters"
@@ -86,6 +87,15 @@ export default function CharacterLayout({
               {character.game ? "Back to Campaign" : "Back to Characters"}
             </Button>
           </Link>
+          
+          {/* Level Up Button */}
+          {character.level < 10 && (
+            <LevelUpDrawer
+              currentLevel={character.level}
+              characterName={character.name}
+              isOwner={isOwner}
+            />
+          )}
         </div>
 
         {/* Character Header */}
