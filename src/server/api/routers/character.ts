@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LevelChoice } from "@prisma/client";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { classes } from "~/lib/srd/classes";
@@ -89,6 +90,17 @@ const updateCharacterSchema = z.object({
     .string()
     .max(50, "Experience must be less than 50 characters")
     .optional(),
+});
+
+const levelUpSchema = z.object({
+  characterId: z.string(),
+  choices: z.array(z.enum(["traits", "hitpoints", "stress", "experiences", "domain", "evasion"])),
+});
+
+const updateTraitMarkedSchema = z.object({
+  id: z.string(),
+  trait: z.enum(["agility", "strength", "finesse", "instinct", "presence", "knowledge"]),
+  marked: z.boolean(),
 });
 
 export const characterRouter = createTRPCRouter({
@@ -379,5 +391,170 @@ export const characterRouter = createTRPCRouter({
       return ctx.db.character.delete({
         where: { id: input.id },
       });
+    }),
+
+  levelUp: protectedProcedure
+    .input(levelUpSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: { userId: true, level: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only level up your own characters");
+      }
+
+      // Validate choices (must be exactly 2)
+      if (input.choices.length !== 2) {
+        throw new Error("Must select exactly 2 level-up choices");
+      }
+
+      const newLevel = character.level + 1;
+
+      // Check if character level already exists
+      const existingLevel = await ctx.db.characterLevel.findUnique({
+        where: {
+          characterId_level: {
+            characterId: input.characterId,
+            level: newLevel,
+          },
+        },
+      });
+
+      if (existingLevel) {
+        throw new Error("Character has already leveled up to this level");
+      }
+
+      // Map frontend choices to database enum values
+      const choiceMap: Record<string, LevelChoice> = {
+        traits: LevelChoice.TRAIT_BONUS,
+        hitpoints: LevelChoice.HIT_POINT_SLOT,
+        stress: LevelChoice.STRESS_SLOT,
+        experiences: LevelChoice.EXPERIENCE_BONUS,
+        domain: LevelChoice.DOMAIN_CARD,
+        evasion: LevelChoice.EVASION_BONUS,
+      };
+
+      // Create the character level with choices
+      const characterLevel = await ctx.db.characterLevel.create({
+        data: {
+          characterId: input.characterId,
+          level: newLevel,
+          choices: {
+            create: input.choices.map((choice) => ({
+              choice: choiceMap[choice]!,
+            })),
+          },
+        },
+        include: {
+          choices: true,
+        },
+      });
+
+      // Prepare character update data
+      const updateData: { level: number; [key: string]: boolean | number } = {
+        level: newLevel,
+      };
+
+      // If leveling up to level 5 or 8, unmark all traits
+      if (newLevel === 5 || newLevel === 8) {
+        updateData.agilityMarked = false;
+        updateData.strengthMarked = false;
+        updateData.finesseMarked = false;
+        updateData.instinctMarked = false;
+        updateData.presenceMarked = false;
+        updateData.knowledgeMarked = false;
+      }
+
+      // Update the character's level and potentially unmark traits
+      await ctx.db.character.update({
+        where: { id: input.characterId },
+        data: updateData,
+      });
+
+      return characterLevel;
+    }),
+
+  updateTraitMarked: protectedProcedure
+    .input(updateTraitMarkedSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      // Map trait name to database field
+      const traitFieldMap = {
+        agility: "agilityMarked",
+        strength: "strengthMarked",
+        finesse: "finesseMarked",
+        instinct: "instinctMarked",
+        presence: "presenceMarked",
+        knowledge: "knowledgeMarked",
+      } as const;
+
+      const fieldName = traitFieldMap[input.trait];
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { [fieldName]: input.marked },
+      });
+    }),
+
+  getLevelHistory: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        include: {
+          CharacterLevel: {
+            include: {
+              choices: true,
+              traitIncreases: true,
+              experienceIncreases: true,
+            },
+            orderBy: { level: "asc" },
+          },
+        },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Allow viewing if user owns the character OR is in the same game
+      const canView =
+        character.userId === ctx.session.user.id ||
+        (character.gameId &&
+          (await ctx.db.game.findFirst({
+            where: {
+              id: character.gameId,
+              OR: [
+                { gameMasterId: ctx.session.user.id },
+                { characters: { some: { userId: ctx.session.user.id } } },
+              ],
+            },
+          })));
+
+      if (!canView) {
+        throw new Error("You don't have permission to view this character");
+      }
+
+      return character.CharacterLevel;
     }),
 });

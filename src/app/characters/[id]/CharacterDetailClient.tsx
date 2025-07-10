@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import CharacterExperiences from "~/components/CharacterExperiences";
-import CharacterAbilities from "~/components/CharacterAbilities";
+import CharacterTraits from "~/components/CharacterTraits";
 import HealthSection from "~/components/HealthSection";
 import DefenseSection from "~/components/DefenseSection";
 import GoldSection from "~/components/GoldSection";
@@ -49,9 +49,9 @@ export default function CharacterDetailClient({
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Abilities Section */}
+      {/* Traits Section */}
       <div className="mb-8">
-        <CharacterAbilities
+        <CharacterTraits
           character={character}
           isOwner={isOwner}
           game={character.game}

@@ -97,6 +97,14 @@ model Character {
     presenceModifier  Int @default(0)
     knowledgeModifier Int @default(0)
 
+    // Marked traits (default to false)
+    agilityMarked     Boolean @default(false)
+    strengthMarked    Boolean @default(false)
+    finesseMarked     Boolean @default(false)
+    instinctMarked    Boolean @default(false)
+    presenceMarked    Boolean @default(false)
+    knowledgeMarked   Boolean @default(false)
+
     // Health and damage tracking
     hp                    Int     @default(0)
     maxHp                 Int     @default(0)

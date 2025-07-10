@@ -11,6 +11,7 @@ import { User, Crown, Info, Edit } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import DomainBadge from "~/components/DomainBadge";
+import LevelHistoryDrawer from "~/components/LevelHistoryDrawer";
 import { classes } from "~/lib/srd/classes";
 import { Subclasses } from "~/lib/srd/subclasses";
 
@@ -100,9 +101,16 @@ export default function CharacterHeader({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div>
                 <p className="text-sm text-slate-400">Level</p>
-                <Badge variant="secondary" className="bg-sky-500 text-white">
-                  {character.level}
-                </Badge>
+                <LevelHistoryDrawer
+                  characterId={character.id}
+                  currentLevel={character.level}
+                >
+                  <button className="cursor-pointer">
+                    <Badge variant="secondary" className="bg-sky-500 text-white hover:bg-sky-600 transition-colors">
+                      {character.level}
+                    </Badge>
+                  </button>
+                </LevelHistoryDrawer>
               </div>
 
               <div>

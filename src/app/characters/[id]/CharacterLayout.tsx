@@ -9,6 +9,7 @@ import CharacterTabs from "~/components/CharacterTabs";
 import FloatingDiceRolls from "~/components/FloatingDiceRolls";
 import LevelUpDrawer from "~/components/LevelUpDrawer";
 import { usePathname } from "next/navigation";
+import { api } from "~/trpc/react";
 
 interface Character {
   id: string;
@@ -37,11 +38,17 @@ interface CharacterLayoutProps {
 
 export default function CharacterLayout({
   characterId,
-  character,
+  character: initialCharacter,
   children,
 }: CharacterLayoutProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+
+  // Use client-side query with server data as initial data
+  const { data: character } = api.character.getById.useQuery(
+    { id: characterId },
+    { initialData: initialCharacter }
+  );
 
   if (!character) {
     return (
@@ -91,6 +98,7 @@ export default function CharacterLayout({
           {/* Level Up Button */}
           {character.level < 10 && (
             <LevelUpDrawer
+              characterId={character.id}
               currentLevel={character.level}
               characterName={character.name}
               isOwner={isOwner}

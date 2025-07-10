@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { TrendingUp, CheckCircle2, Plus, Minus } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 interface LevelUpOption {
   id: string;
@@ -22,12 +23,14 @@ interface LevelUpOption {
 }
 
 interface LevelUpDrawerProps {
+  characterId: string;
   currentLevel: number;
   characterName: string;
   isOwner: boolean;
 }
 
 export default function LevelUpDrawer({
+  characterId,
   currentLevel,
   characterName,
   isOwner,
@@ -35,35 +38,93 @@ export default function LevelUpDrawer({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
 
-  const levelUpOptions: LevelUpOption[] = [
+  // Fetch character level history to count previous choices
+  const { data: levelHistory } = api.character.getLevelHistory.useQuery(
+    { id: characterId },
+    { enabled: open }
+  );
+
+  const utils = api.useUtils();
+
+  const levelUpMutation = api.character.levelUp.useMutation({
+    onSuccess: () => {
+      // Invalidate and refetch character data and level history
+      void utils.character.getById.invalidate({ id: characterId });
+      void utils.character.getLevelHistory.invalidate({ id: characterId });
+      
+      setOpen(false);
+      setSelectedOptions([]);
+    },
+    onError: (error) => {
+      console.error("Level up failed:", error);
+    },
+  });
+
+  // Count previous choices from level history within current bracket
+  const getPreviousChoiceCount = (choiceId: string): number => {
+    if (!levelHistory) return 0;
+
+    const choiceMap: Record<string, string> = {
+      traits: "TRAIT_BONUS",
+      hitpoints: "HIT_POINT_SLOT",
+      stress: "STRESS_SLOT",
+      experiences: "EXPERIENCE_BONUS",
+      domain: "DOMAIN_CARD",
+      evasion: "EVASION_BONUS",
+    };
+
+    const dbChoiceType = choiceMap[choiceId];
+    if (!dbChoiceType) return 0;
+
+    // Determine the level bracket for the next level (where they're leveling TO)
+    const nextLevel = currentLevel + 1;
+    let bracketStart: number;
+    
+    if (nextLevel >= 2 && nextLevel <= 4) {
+      bracketStart = 2;
+    } else if (nextLevel >= 5 && nextLevel <= 7) {
+      bracketStart = 5;
+    } else if (nextLevel >= 8 && nextLevel <= 10) {
+      bracketStart = 8;
+    } else {
+      // Level 1 or beyond 10, no restrictions
+      return 0;
+    }
+
+    // Only count choices made within the current bracket
+    return levelHistory.reduce((count, level) => {
+      if (level.level >= bracketStart && level.level < nextLevel) {
+        return count + level.choices.filter(choice => choice.choice === dbChoiceType).length;
+      }
+      return count;
+    }, 0);
+  };
+
+  const baseLevelUpOptions: Omit<LevelUpOption, "currentSelections">[] = [
     {
       id: "traits",
       name: "Character Traits",
       description:
         "Gain a +1 bonus to two unmarked character traits and mark them.",
       maxSelections: 3,
-      currentSelections: 0,
     },
     {
       id: "hitpoints",
       name: "Hit Points",
       description: "Permanently gain one Hit Point slot.",
       maxSelections: 2,
-      currentSelections: 0,
     },
     {
       id: "stress",
       name: "Stress Slots",
       description: "Permanently gain one Stress slot.",
       maxSelections: 2,
-      currentSelections: 0,
     },
     {
       id: "experiences",
       name: "Experiences",
       description: "Permanently gain a +1 bonus to two Experiences.",
       maxSelections: 1,
-      currentSelections: 0,
     },
     {
       id: "domain",
@@ -71,16 +132,20 @@ export default function LevelUpDrawer({
       description:
         "Choose an additional domain card of your level or lower from a domain you have access to (up to level 4).",
       maxSelections: 1,
-      currentSelections: 0,
     },
     {
       id: "evasion",
       name: "Evasion",
       description: "Permanently gain a +1 bonus to your Evasion.",
       maxSelections: 1,
-      currentSelections: 0,
     },
   ];
+
+  // Build level up options with current selections from previous levels
+  const levelUpOptions: LevelUpOption[] = baseLevelUpOptions.map(option => ({
+    ...option,
+    currentSelections: getPreviousChoiceCount(option.id),
+  }));
 
   // Count how many times each option has been selected
   const optionCounts = selectedOptions.reduce(
@@ -97,8 +162,11 @@ export default function LevelUpDrawer({
 
     if (!option) return;
 
-    // If we can still select more of this option and have room for selections
-    if (currentCount < option.maxSelections && selectedOptions.length < 2) {
+    const totalPreviousSelections = option.currentSelections;
+    const totalCurrentAndPreviousSelections = totalPreviousSelections + currentCount;
+
+    // If we can still select more of this option (considering previous levels) and have room for selections
+    if (totalCurrentAndPreviousSelections < option.maxSelections && selectedOptions.length < 2) {
       setSelectedOptions([...selectedOptions, optionId]);
     }
   };
@@ -122,21 +190,27 @@ export default function LevelUpDrawer({
     if (!option) return true;
 
     const currentCount = optionCounts[optionId] ?? 0;
+    const totalPreviousSelections = option.currentSelections;
+    const totalCurrentAndPreviousSelections = totalPreviousSelections + currentCount;
 
-    // Disable if we've reached the max selections for this option
-    if (currentCount >= option.maxSelections) return true;
+    // Disable if we've reached the max selections for this option (including previous levels)
+    if (totalCurrentAndPreviousSelections >= option.maxSelections) return true;
 
-    // Disable if we already have 2 total selections
+    // Disable if we already have 2 total selections for this level-up
     if (selectedOptions.length >= 2) return true;
 
     return false;
   };
 
   const handleConfirmLevelUp = () => {
-    // For now, just close the drawer
-    console.log("Level up confirmed with options:", selectedOptions);
-    setOpen(false);
-    setSelectedOptions([]);
+    if (selectedOptions.length !== 2) {
+      return;
+    }
+
+    levelUpMutation.mutate({
+      characterId,
+      choices: selectedOptions as ("traits" | "hitpoints" | "stress" | "experiences" | "domain" | "evasion")[],
+    });
   };
 
   if (!isOwner) return null;
@@ -195,7 +269,12 @@ export default function LevelUpDrawer({
                         {option.name}
                         {option.maxSelections > 1 && (
                           <span className="ml-2 text-sm text-slate-400">
-                            ({currentCount}/{option.maxSelections})
+                            ({currentCount}/{option.maxSelections - option.currentSelections} remaining)
+                          </span>
+                        )}
+                        {option.maxSelections === 1 && option.currentSelections > 0 && (
+                          <span className="ml-2 text-sm text-red-400">
+                            (Already selected)
                           </span>
                         )}
                       </h4>
@@ -250,10 +329,10 @@ export default function LevelUpDrawer({
           <div className="mt-6 flex gap-3 pb-8">
             <Button
               onClick={handleConfirmLevelUp}
-              disabled={selectedOptions.length !== 2}
+              disabled={selectedOptions.length !== 2 || levelUpMutation.isPending}
               className="flex-1 bg-sky-500 text-white hover:bg-sky-600 disabled:bg-slate-700 disabled:text-slate-400"
             >
-              Confirm Level Up
+              {levelUpMutation.isPending ? "Leveling Up..." : "Confirm Level Up"}
             </Button>
             <Button
               onClick={() => {
