@@ -48,7 +48,7 @@ const createCharacterSchema = z.object({
   experiences: z
     .array(z.string())
     .min(0)
-    .max(2, "Maximum 2 experiences")
+    .max(5, "Maximum 5 experiences")
     .optional(),
 });
 
@@ -129,6 +129,7 @@ const levelUpSchema = z.object({
       "evasion",
     ]),
   ),
+  newExperience: z.string().optional(),
 });
 
 const updateTraitMarkedSchema = z.object({
@@ -393,6 +394,22 @@ export const characterRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createCharacterSchema)
     .mutation(async ({ ctx, input }) => {
+      // Validate experience count based on level
+      const getExpectedExperienceCount = (level: number): number => {
+        if (level === 1) return 2;
+        if (level >= 2 && level <= 4) return 3;
+        if (level >= 5 && level <= 7) return 4;
+        if (level >= 8 && level <= 10) return 5;
+        return 2;
+      };
+
+      const expectedCount = getExpectedExperienceCount(input.level);
+      const actualCount = input.experiences?.length ?? 0;
+      
+      if (actualCount !== expectedCount) {
+        throw new Error(`Character at level ${input.level} must have exactly ${expectedCount} experiences, but got ${actualCount}`);
+      }
+
       // Find the class data to get HP and evasion values
       const classData = classes.find(
         (cls) => cls.name.toLowerCase() === input.class.toLowerCase(),
@@ -760,6 +777,12 @@ export const characterRouter = createTRPCRouter({
 
       const newLevel = character.level + 1;
 
+      // Check if new experience is required for this level
+      const requiresNewExperience = newLevel === 2 || newLevel === 5 || newLevel === 8;
+      if (requiresNewExperience && !input.newExperience?.trim()) {
+        throw new Error(`A new experience is required when leveling up to level ${newLevel}`);
+      }
+
       // Check if character level already exists
       const existingLevel = await ctx.db.characterLevel.findUnique({
         where: {
@@ -823,6 +846,17 @@ export const characterRouter = createTRPCRouter({
           character.class,
         );
         updateData.maxHp = newMaxHp;
+      }
+
+      // Create new experience if required
+      if (requiresNewExperience && input.newExperience?.trim()) {
+        await ctx.db.experience.create({
+          data: {
+            name: input.newExperience.trim(),
+            bonus: 2,
+            characterId: input.characterId,
+          },
+        });
       }
 
       // Update the character's level and potentially unmark traits

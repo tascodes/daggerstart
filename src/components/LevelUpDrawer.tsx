@@ -10,6 +10,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { TrendingUp, CheckCircle2, Plus, Minus, Star } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -37,6 +38,7 @@ export default function LevelUpDrawer({
 }: LevelUpDrawerProps) {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+  const [newExperience, setNewExperience] = useState("");
 
   // Fetch character level history to count previous choices
   const { data: historyData } = api.character.getLevelHistory.useQuery(
@@ -54,6 +56,7 @@ export default function LevelUpDrawer({
 
       setOpen(false);
       setSelectedOptions([]);
+      setNewExperience("");
     },
     onError: (error) => {
       console.error("Level up failed:", error);
@@ -211,8 +214,15 @@ export default function LevelUpDrawer({
     return false;
   };
 
+  const nextLevel = currentLevel + 1;
+  const requiresNewExperience = nextLevel === 2 || nextLevel === 5 || nextLevel === 8;
+
   const handleConfirmLevelUp = () => {
     if (selectedOptions.length !== 2) {
+      return;
+    }
+
+    if (requiresNewExperience && !newExperience.trim()) {
       return;
     }
 
@@ -226,6 +236,7 @@ export default function LevelUpDrawer({
         | "domain"
         | "evasion"
       )[],
+      newExperience: requiresNewExperience ? newExperience.trim() : undefined,
     });
   };
 
@@ -264,13 +275,11 @@ export default function LevelUpDrawer({
           </div>
 
           {/* Show automatic bonuses for levels 2, 5, 8 */}
-          {(currentLevel + 1 === 2 ||
-            currentLevel + 1 === 5 ||
-            currentLevel + 1 === 8) && (
+          {requiresNewExperience && (
             <div className="mb-4 rounded-lg border border-yellow-600 bg-yellow-900/20 p-4">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-yellow-400">
                 <Star className="h-4 w-4" />
-                Automatic Bonuses (Level {currentLevel + 1})
+                Automatic Bonuses (Level {nextLevel})
               </h4>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
@@ -282,6 +291,25 @@ export default function LevelUpDrawer({
                   Gain a +1 bonus to Proficiency
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Experience input for levels 2, 5, 8 */}
+          {requiresNewExperience && (
+            <div className="mb-4 rounded-lg border border-sky-600 bg-sky-900/20 p-4">
+              <h4 className="mb-2 text-sm font-semibold text-sky-400">
+                New Experience Required
+              </h4>
+              <p className="mb-3 text-sm text-slate-300">
+                Enter the name of your new experience (you&apos;ll gain a +2 bonus with it):
+              </p>
+              <Input
+                value={newExperience}
+                onChange={(e) => setNewExperience(e.target.value)}
+                placeholder="e.g., Climbing, Swimming, History..."
+                className="border-slate-600 bg-slate-700 text-white placeholder:text-slate-400"
+                maxLength={50}
+              />
             </div>
           )}
 
@@ -371,7 +399,9 @@ export default function LevelUpDrawer({
             <Button
               onClick={handleConfirmLevelUp}
               disabled={
-                selectedOptions.length !== 2 || levelUpMutation.isPending
+                selectedOptions.length !== 2 || 
+                levelUpMutation.isPending ||
+                (requiresNewExperience && !newExperience.trim())
               }
               className="flex-1 bg-sky-500 text-white hover:bg-sky-600 disabled:bg-slate-700 disabled:text-slate-400"
             >
@@ -383,6 +413,7 @@ export default function LevelUpDrawer({
               onClick={() => {
                 setOpen(false);
                 setSelectedOptions([]);
+                setNewExperience("");
               }}
               variant="outline"
               className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"

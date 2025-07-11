@@ -59,7 +59,7 @@ const formSchema = z.object({
     .number()
     .min(1, "Level must be at least 1")
     .max(10, "Level must be at most 10"),
-  experiences: z.array(z.string()).min(0).max(2).default([]),
+  experiences: z.array(z.string()).min(0).max(5),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -113,6 +113,18 @@ export default function NewCharacterPage() {
   });
 
   const watchedClass = form.watch("class");
+  const watchedLevel = form.watch("level");
+
+  // Calculate number of experiences based on level
+  const getExperienceCount = (level: number): number => {
+    if (level === 1) return 2;
+    if (level >= 2 && level <= 4) return 3;
+    if (level >= 5 && level <= 7) return 4;
+    if (level >= 8 && level <= 10) return 5;
+    return 2; // default fallback
+  };
+
+  const experienceCount = getExperienceCount(watchedLevel || 1);
 
   const createCharacter = api.character.create.useMutation({
     onSuccess: (newCharacter) => {
@@ -1068,7 +1080,20 @@ export default function NewCharacterPage() {
                           Experience&apos;s modifier to an action or reaction
                           roll.
                         </div>
-                        {[0, 1].map((index) => (
+                        <div className="mb-4 rounded-lg border border-sky-600 bg-sky-900/20 p-3">
+                          <p className="text-sm text-sky-400">
+                            At level {watchedLevel || 1}, your character has {experienceCount} experiences.
+                            {watchedLevel && watchedLevel > 1 && (
+                              <span className="text-slate-300">
+                                {" "}(Started with 2 at level 1
+                                {watchedLevel >= 2 && ", gained 1 more at level 2"}
+                                {watchedLevel >= 5 && ", gained 1 more at level 5"}
+                                {watchedLevel >= 8 && ", gained 1 more at level 8"})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        {Array.from({ length: experienceCount }, (_, index) => (
                           <FormField
                             key={`experiences-${index}`}
                             control={form.control}

@@ -789,16 +789,39 @@ export const gameRouter = createTRPCRouter({
         const diceRoller = new DiceRoller();
         const rollResult = diceRoller.roll(input.diceExpression) as any;
 
+        console.log('Dice roll result structure:', JSON.stringify(rollResult, null, 2));
+
         // Extract results
         const total = rollResult.total as number;
         const individualResults: number[] = [];
 
         // Extract individual die results from the notation
-        rollResult.rolls.forEach((rollGroup: any) => {
-          rollGroup.rolls.forEach((die: any) => {
-            individualResults.push(die.value);
+        // The structure varies depending on the dice expression
+        if (rollResult.rolls && Array.isArray(rollResult.rolls)) {
+          rollResult.rolls.forEach((rollGroup: any) => {
+            if (rollGroup.rolls && Array.isArray(rollGroup.rolls)) {
+              rollGroup.rolls.forEach((die: any) => {
+                if (die.value !== undefined) {
+                  individualResults.push(die.value);
+                }
+              });
+            } else if (rollGroup.value !== undefined) {
+              // Single die or modifier
+              individualResults.push(rollGroup.value);
+            }
           });
-        });
+        }
+
+        // If we couldn't extract individual results, try alternative approach
+        if (individualResults.length === 0 && rollResult.output) {
+          // Parse from the output string as fallback
+          const matches = rollResult.output.match(/\[([^\]]+)\]/);
+          if (matches) {
+            const rollsString = matches[1];
+            const rolls = rollsString.split(',').map((r: string) => parseInt(r.trim())).filter((n: number) => !isNaN(n));
+            individualResults.push(...rolls);
+          }
+        }
 
         // Save to database
         const diceRoll = await ctx.db.diceRoll.create({
@@ -838,6 +861,8 @@ export const gameRouter = createTRPCRouter({
 
         return diceRoll;
       } catch (error) {
+        console.error('Dice rolling error:', error);
+        console.error('Dice expression:', input.diceExpression);
         throw new Error(
           `Invalid dice expression "${input.diceExpression}": ${error instanceof Error ? error.message : "Unknown error"}`,
         );

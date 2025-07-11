@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Dice6,
+  Dice1,
   ChevronUp,
   ChevronDown,
   Zap,
@@ -62,6 +64,7 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
   const [newRollNotifications, setNewRollNotifications] = useState<
     NewRollNotification[]
   >([]);
+  const [diceExpression, setDiceExpression] = useState("");
   const { data: session } = useSession();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevRollsRef = useRef<DiceRoll[]>([]);
@@ -94,6 +97,14 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
     },
   });
 
+  // Dice roll mutations
+  const rollActionDice = api.game.rollActionDice.useMutation();
+  const rollCustomDice = api.game.rollCustomDice.useMutation({
+    onSuccess: () => {
+      setDiceExpression("");
+    },
+  });
+
   // Check if user is game master for this game
   const { data: game } = api.game.getById.useQuery(
     { id: gameId! },
@@ -103,6 +114,32 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
 
   const handleClearRolls = () => {
     clearRolls.mutate({ gameId: gameId! });
+  };
+
+  // Dice roll handlers
+  const handleCustomRoll = () => {
+    if (!diceExpression.trim()) return;
+
+    rollCustomDice.mutate({
+      gameId: gameId!,
+      name: diceExpression.trim(),
+      diceExpression: diceExpression.trim(),
+    });
+  };
+
+  const handleQuickD20 = () => {
+    rollCustomDice.mutate({
+      gameId: gameId!,
+      name: "1d20",
+      diceExpression: "1d20",
+    });
+  };
+
+  const handleQuickAction = () => {
+    rollActionDice.mutate({
+      gameId: gameId!,
+      name: "Action",
+    });
   };
 
   const rollCount = rolls?.length ?? 0;
@@ -381,6 +418,56 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+            </div>
+          </div>
+
+          {/* Dice Roller Section */}
+          <div className="border-b border-slate-700 p-3">
+            <div className="space-y-3">
+              {/* Custom dice input */}
+              <div className="flex gap-2">
+                <Input
+                  value={diceExpression}
+                  onChange={(e) => setDiceExpression(e.target.value)}
+                  placeholder="e.g., 3d6+2, 1d20, 2d10+1d4"
+                  className="flex-1 border-slate-600 bg-slate-700 text-white placeholder:text-slate-400"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleCustomRoll();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleCustomRoll}
+                  disabled={!diceExpression.trim() || rollCustomDice.isPending}
+                  className="bg-purple-600 text-white hover:bg-purple-700"
+                  size="sm"
+                >
+                  Roll
+                </Button>
+              </div>
+
+              {/* Quick roll buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleQuickD20}
+                  disabled={rollCustomDice.isPending}
+                  className="flex items-center gap-1 bg-sky-600 text-white hover:bg-sky-700"
+                  size="sm"
+                >
+                  <Dice1 className="h-3 w-3" />
+                  1d20
+                </Button>
+                <Button
+                  onClick={handleQuickAction}
+                  disabled={rollActionDice.isPending}
+                  className="flex items-center gap-1 bg-yellow-600 text-white hover:bg-yellow-700"
+                  size="sm"
+                >
+                  <Zap className="h-3 w-3" />
+                  Action
+                </Button>
+              </div>
             </div>
           </div>
 
