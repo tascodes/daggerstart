@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { notFound } from "next/navigation";
@@ -33,6 +33,15 @@ import {
   FormLabel,
   FormMessage,
 } from "~/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
 
@@ -55,11 +64,7 @@ const formSchema = z.object({
   subclass: z.string().min(1, "Subclass is required"),
   ancestry: z.string().min(1, "Ancestry is required"),
   community: z.string().min(1, "Community is required"),
-  level: z
-    .number()
-    .min(1, "Level must be at least 1")
-    .max(10, "Level must be at most 10"),
-  experiences: z.array(z.string()).min(0).max(5),
+  experiences: z.array(z.string()).min(0).max(2),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -83,6 +88,7 @@ export default function NewCharacterPage() {
   const [expandedCommunity, setExpandedCommunity] = useState<string | null>(
     null,
   );
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const characterId = searchParams.get("characterId");
@@ -107,24 +113,14 @@ export default function NewCharacterPage() {
       subclass: "",
       ancestry: "",
       community: "",
-      level: 1,
       experiences: [],
     },
   });
 
   const watchedClass = form.watch("class");
-  const watchedLevel = form.watch("level");
 
-  // Calculate number of experiences based on level
-  const getExperienceCount = (level: number): number => {
-    if (level === 1) return 2;
-    if (level >= 2 && level <= 4) return 3;
-    if (level >= 5 && level <= 7) return 4;
-    if (level >= 8 && level <= 10) return 5;
-    return 2; // default fallback
-  };
-
-  const experienceCount = getExperienceCount(watchedLevel || 1);
+  // Always 2 experiences for new characters
+  const experienceCount = 2;
 
   const createCharacter = api.character.create.useMutation({
     onSuccess: (newCharacter) => {
@@ -135,6 +131,14 @@ export default function NewCharacterPage() {
   const updateCharacter = api.character.update.useMutation({
     onSuccess: (updatedCharacter) => {
       router.push(`/characters/${updatedCharacter.id}`);
+    },
+  });
+
+  const resetCharacter = api.character.resetToLevel1.useMutation({
+    onSuccess: () => {
+      setShowResetConfirm(false);
+      // Refresh the page to show the reset character
+      window.location.reload();
     },
   });
 
@@ -155,9 +159,9 @@ export default function NewCharacterPage() {
         subclass: existingCharacter.subclass,
         ancestry: existingCharacter.ancestry,
         community: existingCharacter.community,
-        level: existingCharacter.level,
         experiences:
-          existingCharacter.experiences?.map((exp) => exp.name) ?? [],
+          existingCharacter.experiences?.slice(0, 2).map((exp) => exp.name) ??
+          [],
       });
     }
   }, [existingCharacter, isEditMode, form]);
@@ -172,7 +176,7 @@ export default function NewCharacterPage() {
         subclass: data.subclass,
         ancestry: data.ancestry,
         community: data.community,
-        level: data.level,
+        level: 1,
         experiences: data.experiences.map((name, index) => ({
           id: existingCharacter?.experiences?.[index]?.id,
           name,
@@ -187,7 +191,7 @@ export default function NewCharacterPage() {
         subclass: data.subclass,
         ancestry: data.ancestry,
         community: data.community,
-        level: data.level,
+        level: 1,
         experiences: data.experiences,
       });
     }
@@ -320,48 +324,79 @@ export default function NewCharacterPage() {
                           )}
                         />
 
-                        <FormField
-                          key="getting-started-level"
-                          control={form.control}
-                          name="level"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-white">
-                                Level
-                              </FormLabel>
-                              <Select
-                                onValueChange={(value) =>
-                                  field.onChange(parseInt(value))
-                                }
-                                value={field.value.toString()}
+                        {isEditMode &&
+                          existingCharacter &&
+                          existingCharacter.level > 1 && (
+                            <div className="space-y-3">
+                              <div className="font-medium text-white">
+                                Character Level: {existingCharacter.level}
+                              </div>
+                              <Dialog
+                                open={showResetConfirm}
+                                onOpenChange={setShowResetConfirm}
                               >
-                                <FormControl>
-                                  <SelectTrigger className="border-slate-600 bg-slate-700 text-white">
-                                    <SelectValue placeholder="Select level" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="border-slate-600 bg-slate-700">
-                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(
-                                    (level) => (
-                                      <SelectItem
-                                        key={level}
-                                        value={level.toString()}
-                                        className="text-white focus:bg-slate-600"
-                                      >
-                                        Level {level}
-                                      </SelectItem>
-                                    ),
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormDescription className="text-slate-400">
-                                Choose your character&apos;s starting level
-                                (1-10).
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    Reset to Level 1
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="border-slate-700 bg-slate-800 text-white">
+                                  <DialogHeader>
+                                    <DialogTitle className="text-white">
+                                      Reset Character to Level 1
+                                    </DialogTitle>
+                                    <DialogDescription className="text-slate-300">
+                                      This will permanently remove all:
+                                      <ul className="mt-2 list-inside list-disc space-y-1">
+                                        <li>
+                                          All level progression (CharacterLevel
+                                          entries)
+                                        </li>
+                                        <li>
+                                          All experiences beyond the first 2
+                                        </li>
+                                        <li>All domain cards</li>
+                                      </ul>
+                                      <span className="mt-2 block font-semibold text-red-400">
+                                        This action cannot be undone.
+                                      </span>
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setShowResetConfirm(false)}
+                                      className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => {
+                                        if (characterId) {
+                                          resetCharacter.mutate({
+                                            id: characterId,
+                                          });
+                                        }
+                                      }}
+                                      disabled={resetCharacter.isPending}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      {resetCharacter.isPending
+                                        ? "Resetting..."
+                                        : "Reset Character"}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           )}
-                        />
                       </div>
                     )}
 
@@ -1082,21 +1117,9 @@ export default function NewCharacterPage() {
                         </div>
                         <div className="mb-4 rounded-lg border border-sky-600 bg-sky-900/20 p-3">
                           <p className="text-sm text-sky-400">
-                            At level {watchedLevel || 1}, your character has{" "}
-                            {experienceCount} experiences.
-                            {watchedLevel && watchedLevel > 1 && (
-                              <span className="text-slate-300">
-                                {" "}
-                                (Started with 2 at level 1
-                                {watchedLevel >= 2 &&
-                                  ", gained 1 more at level 2"}
-                                {watchedLevel >= 5 &&
-                                  ", gained 1 more at level 5"}
-                                {watchedLevel >= 8 &&
-                                  ", gained 1 more at level 8"}
-                                )
-                              </span>
-                            )}
+                            Your character starts with {experienceCount}{" "}
+                            experiences at level 1. Additional experiences will
+                            be gained when leveling up.
                           </p>
                         </div>
                         {Array.from({ length: experienceCount }, (_, index) => (

@@ -140,6 +140,7 @@ const updateCharacterSchema = z.object({
 
 const levelUpSchema = z.object({
   characterId: z.string(),
+  targetLevel: z.number().optional(), // If specified, level up to this specific level
   choices: z.array(
     z.enum([
       "traits",
@@ -700,10 +701,10 @@ export const characterRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateCharacterSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify the character belongs to the user
+      // Verify the character belongs to the user and get current level
       const character = await ctx.db.character.findUnique({
         where: { id: input.id },
-        select: { userId: true },
+        select: { userId: true, level: true },
       });
 
       if (!character) {
@@ -712,6 +713,18 @@ export const characterRouter = createTRPCRouter({
 
       if (character.userId !== ctx.session.user.id) {
         throw new Error("You can only update your own characters");
+      }
+
+      // If level is being reduced, delete CharacterLevel entries above the new level
+      if (input.level < character.level) {
+        await ctx.db.characterLevel.deleteMany({
+          where: {
+            characterId: input.id,
+            level: {
+              gt: input.level,
+            },
+          },
+        });
       }
 
       // Find the class data to get HP and evasion values
@@ -827,14 +840,46 @@ export const characterRouter = createTRPCRouter({
         throw new Error("Must select exactly 2 level-up choices");
       }
 
-      const newLevel = character.level + 1;
+      // Get existing character levels to find the next level that needs completion
+      const characterLevels = await ctx.db.characterLevel.findMany({
+        where: { characterId: input.characterId },
+        select: { level: true },
+        orderBy: { level: "asc" },
+      });
+
+      const existingLevels = characterLevels.map((cl) => cl.level);
+
+      // Find the next level that needs to be completed
+      let nextLevelToComplete = 2; // Start checking from level 2
+      while (
+        nextLevelToComplete <= character.level &&
+        existingLevels.includes(nextLevelToComplete)
+      ) {
+        nextLevelToComplete++;
+      }
+
+      // If a specific target level is provided, ensure it's the next one that needs completion
+      const actualTargetLevel = input.targetLevel
+        ? input.targetLevel === nextLevelToComplete
+          ? input.targetLevel
+          : nextLevelToComplete
+        : nextLevelToComplete;
+
+      // Validate target level - actualTargetLevel should be within the character's current level
+      if (actualTargetLevel > character.level) {
+        throw new Error(
+          `Cannot level up to ${actualTargetLevel}. Character's level is only ${character.level}. Please update character level first.`,
+        );
+      }
 
       // Check if new experience is required for this level
       const requiresNewExperience =
-        newLevel === 2 || newLevel === 5 || newLevel === 8;
+        actualTargetLevel === 2 ||
+        actualTargetLevel === 5 ||
+        actualTargetLevel === 8;
       if (requiresNewExperience && !input.newExperience?.trim()) {
         throw new Error(
-          `A new experience is required when leveling up to level ${newLevel}`,
+          `A new experience is required when leveling up to level ${actualTargetLevel}`,
         );
       }
 
@@ -843,7 +888,7 @@ export const characterRouter = createTRPCRouter({
         where: {
           characterId_level: {
             characterId: input.characterId,
-            level: newLevel,
+            level: actualTargetLevel,
           },
         },
       });
@@ -866,7 +911,7 @@ export const characterRouter = createTRPCRouter({
       const characterLevel = await ctx.db.characterLevel.create({
         data: {
           characterId: input.characterId,
-          level: newLevel,
+          level: actualTargetLevel,
           choices: {
             create: input.choices.map((choice) => ({
               choice: choiceMap[choice]!,
@@ -878,20 +923,8 @@ export const characterRouter = createTRPCRouter({
         },
       });
 
-      // Prepare character update data
-      const updateData: { level: number; [key: string]: boolean | number } = {
-        level: newLevel,
-      };
-
-      // If leveling up to level 5 or 8, unmark all traits
-      if (newLevel === 5 || newLevel === 8) {
-        updateData.agilityMarked = false;
-        updateData.strengthMarked = false;
-        updateData.finesseMarked = false;
-        updateData.instinctMarked = false;
-        updateData.presenceMarked = false;
-        updateData.knowledgeMarked = false;
-      }
+      // Note: We don't update the character's level here since that's controlled by the create/edit page
+      // The level up process only creates the CharacterLevel entries with choices
 
       // Check if hit points choice was selected and recalculate maxHp
       if (input.choices.includes("hitpoints")) {
@@ -900,7 +933,26 @@ export const characterRouter = createTRPCRouter({
           input.characterId,
           character.class,
         );
-        updateData.maxHp = newMaxHp;
+        // Update max HP if hit points were chosen
+        await ctx.db.character.update({
+          where: { id: input.characterId },
+          data: { maxHp: newMaxHp },
+        });
+      }
+
+      // Prepare trait update data only if leveling to 5 or 8
+      if (actualTargetLevel === 5 || actualTargetLevel === 8) {
+        await ctx.db.character.update({
+          where: { id: input.characterId },
+          data: {
+            agilityMarked: false,
+            strengthMarked: false,
+            finesseMarked: false,
+            instinctMarked: false,
+            presenceMarked: false,
+            knowledgeMarked: false,
+          },
+        });
       }
 
       // Create new experience if required
@@ -913,12 +965,6 @@ export const characterRouter = createTRPCRouter({
           },
         });
       }
-
-      // Update the character's level and potentially unmark traits
-      await ctx.db.character.update({
-        where: { id: input.characterId },
-        data: updateData,
-      });
 
       return characterLevel;
     }),
@@ -980,6 +1026,51 @@ export const characterRouter = createTRPCRouter({
         where: { id: input.id },
         data: { maxHp: newMaxHp },
       });
+    }),
+
+  getNextLevelToComplete: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true, level: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only check your own characters");
+      }
+
+      // Get existing character levels
+      const characterLevels = await ctx.db.characterLevel.findMany({
+        where: { characterId: input.id },
+        select: { level: true },
+        orderBy: { level: "asc" },
+      });
+
+      const existingLevels = characterLevels.map((cl) => cl.level);
+      const maxCompletedLevel =
+        existingLevels.length > 0 ? Math.max(...existingLevels) : 1;
+
+      // Find the next level that needs to be completed
+      let nextLevelToComplete = 2; // Start checking from level 2
+      while (
+        nextLevelToComplete <= character.level &&
+        existingLevels.includes(nextLevelToComplete)
+      ) {
+        nextLevelToComplete++;
+      }
+
+      return {
+        currentLevel: character.level,
+        maxCompletedLevel,
+        nextLevelToComplete:
+          nextLevelToComplete <= character.level ? nextLevelToComplete : null,
+        hasIncompletelevels: nextLevelToComplete <= character.level,
+      };
     }),
 
   getLevelHistory: protectedProcedure
@@ -1367,6 +1458,68 @@ export const characterRouter = createTRPCRouter({
 
       return ctx.db.inventoryItem.delete({
         where: { id: input.id },
+      });
+    }),
+
+  resetToLevel1: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true, level: true, class: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only reset your own characters");
+      }
+
+      // Use a transaction to ensure all operations succeed or fail together
+      return ctx.db.$transaction(async (tx) => {
+        // 1. Delete all CharacterLevel entries
+        await tx.characterLevel.deleteMany({
+          where: { characterId: input.id },
+        });
+
+        // 2. Delete all SelectedCard entries (domain cards)
+        await tx.selectedCard.deleteMany({
+          where: { characterId: input.id },
+        });
+
+        // 3. Keep only the first 2 experiences
+        const experiences = await tx.experience.findMany({
+          where: { characterId: input.id },
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (experiences.length > 2) {
+          const experiencesToDelete = experiences.slice(2);
+          await tx.experience.deleteMany({
+            where: {
+              id: {
+                in: experiencesToDelete.map((exp) => exp.id),
+              },
+            },
+          });
+        }
+
+        // 4. Reset character level to 1 and recalculate maxHp
+        const classData = classes.find(
+          (cls) => cls.name.toLowerCase() === character.class?.toLowerCase(),
+        );
+        const baseHp = classData ? parseInt(classData.hp, 10) : 5;
+
+        return tx.character.update({
+          where: { id: input.id },
+          data: {
+            level: 1,
+            maxHp: baseHp, // Reset to base class HP
+          },
+        });
       });
     }),
 });

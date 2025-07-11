@@ -49,6 +49,11 @@ export default function CharacterLayout({
     id: characterId,
   });
 
+  // Check for incomplete levels
+  const { data: levelData } = api.character.getNextLevelToComplete.useQuery({
+    id: characterId,
+  });
+
   // Use server character as fallback until client query loads
   const currentCharacter = character ?? initialCharacter;
 
@@ -104,8 +109,8 @@ export default function CharacterLayout({
             </Button>
           </Link>
 
-          {/* Level Up Button */}
-          {currentCharacter.level < 10 && (
+          {/* Level Up Button - show if has incomplete levels or can level up normally (under level 10) */}
+          {(levelData?.hasIncompletelevels || currentCharacter.level < 10) && (
             <LevelUpDrawer
               characterId={currentCharacter.id}
               currentLevel={currentCharacter.level}

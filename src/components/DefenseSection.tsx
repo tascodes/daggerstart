@@ -110,13 +110,10 @@ const DefenseSection = ({
     [character.id, updateDefenseStat],
   );
 
-  const debouncedEvasionChange = useDebounceCallback(
-    (value: number) => {
-      const clampedValue = Math.max(0, Math.min(20, value));
-      debouncedEvasionUpdate(clampedValue);
-    },
-    500,
-  );
+  const debouncedEvasionChange = useDebounceCallback((value: number) => {
+    const clampedValue = Math.max(0, Math.min(20, value));
+    debouncedEvasionUpdate(clampedValue);
+  }, 500);
 
   const handleEvasionChange = (value: number) => {
     debouncedEvasionChange(value);

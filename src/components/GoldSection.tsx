@@ -99,21 +99,15 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
     [character.id, updateGoldStat],
   );
 
-  const debouncedHandfulsUpdate = useDebounceCallback(
-    (value: number) => {
-      const clampedValue = Math.max(0, Math.min(10, value));
-      debouncedGoldUpdate("goldHandfuls", clampedValue);
-    },
-    500,
-  );
+  const debouncedHandfulsUpdate = useDebounceCallback((value: number) => {
+    const clampedValue = Math.max(0, Math.min(10, value));
+    debouncedGoldUpdate("goldHandfuls", clampedValue);
+  }, 500);
 
-  const debouncedBagsUpdate = useDebounceCallback(
-    (value: number) => {
-      const clampedValue = Math.max(0, Math.min(10, value));
-      debouncedGoldUpdate("goldBags", clampedValue);
-    },
-    500,
-  );
+  const debouncedBagsUpdate = useDebounceCallback((value: number) => {
+    const clampedValue = Math.max(0, Math.min(10, value));
+    debouncedGoldUpdate("goldBags", clampedValue);
+  }, 500);
 
   const handleHandfulsChange = (value: number) => {
     debouncedHandfulsUpdate(value);

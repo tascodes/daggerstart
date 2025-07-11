@@ -5,6 +5,7 @@ import CharacterExperiences from "~/components/CharacterExperiences";
 import CharacterTraits from "~/components/CharacterTraits";
 import HealthSection from "~/components/HealthSection";
 import DefenseSection from "~/components/DefenseSection";
+import ClassFeatures from "~/components/ClassFeatures";
 import FearBar from "~/components/FearBar";
 import { api } from "~/trpc/react";
 
@@ -113,15 +114,13 @@ export default function CharacterDetailClient({
                 {character.community}
               </p>
             </div>
-
-            {/* Future sections can be added here */}
-            <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
-              <p className="text-center text-slate-400">
-                More character details coming soon...
-              </p>
-            </div>
           </div>
         </div>
+      </div>
+
+      {/* Class Features Section */}
+      <div className="mt-8">
+        <ClassFeatures character={character} />
       </div>
     </div>
   );

@@ -48,7 +48,8 @@ export default function CharacterInventoryClient({
     characterId,
   });
 
-  const refetchCharacter = () => void utils.character.getById.invalidate({ id: characterId });
+  const refetchCharacter = () =>
+    void utils.character.getById.invalidate({ id: characterId });
 
   const utils = api.useUtils();
 

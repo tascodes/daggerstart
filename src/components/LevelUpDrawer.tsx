@@ -46,6 +46,12 @@ export default function LevelUpDrawer({
     { enabled: open },
   );
 
+  // Fetch next level to complete
+  const { data: levelData } = api.character.getNextLevelToComplete.useQuery(
+    { id: characterId },
+    { enabled: open },
+  );
+
   const utils = api.useUtils();
 
   const levelUpMutation = api.character.levelUp.useMutation({
@@ -53,6 +59,9 @@ export default function LevelUpDrawer({
       // Invalidate and refetch character data and level history
       void utils.character.getById.invalidate({ id: characterId });
       void utils.character.getLevelHistory.invalidate({ id: characterId });
+      void utils.character.getNextLevelToComplete.invalidate({
+        id: characterId,
+      });
 
       setOpen(false);
       setSelectedOptions([]);
@@ -214,9 +223,14 @@ export default function LevelUpDrawer({
     return false;
   };
 
-  const nextLevel = currentLevel + 1;
+  // Use the next level that needs to be completed, or fall back to next level
+  // If there are incomplete levels, always use nextLevelToComplete
+  // If no incomplete levels, then level up normally to next level
+  const targetLevel = levelData?.hasIncompletelevels
+    ? levelData.nextLevelToComplete!
+    : currentLevel + 1;
   const requiresNewExperience =
-    nextLevel === 2 || nextLevel === 5 || nextLevel === 8;
+    targetLevel === 2 || targetLevel === 5 || targetLevel === 8;
 
   const handleConfirmLevelUp = () => {
     if (selectedOptions.length !== 2) {
@@ -229,6 +243,7 @@ export default function LevelUpDrawer({
 
     levelUpMutation.mutate({
       characterId,
+      targetLevel,
       choices: selectedOptions as (
         | "traits"
         | "hitpoints"
@@ -260,7 +275,12 @@ export default function LevelUpDrawer({
             Level Up {characterName}
           </SheetTitle>
           <SheetDescription className="text-lg text-slate-300">
-            Level {currentLevel} → Level {currentLevel + 1}
+            Level {currentLevel} → Level {targetLevel}
+            {levelData?.hasIncompletelevels && (
+              <div className="mt-1 text-sm text-yellow-400">
+                Completing missing level progression
+              </div>
+            )}
           </SheetDescription>
         </SheetHeader>
 
@@ -280,7 +300,7 @@ export default function LevelUpDrawer({
             <div className="mb-4 rounded-lg border border-yellow-600 bg-yellow-900/20 p-4">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-yellow-400">
                 <Star className="h-4 w-4" />
-                Automatic Bonuses (Level {nextLevel})
+                Automatic Bonuses (Level {targetLevel})
               </h4>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
