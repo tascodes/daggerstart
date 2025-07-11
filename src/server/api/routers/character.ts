@@ -4,6 +4,32 @@ import { LevelChoice } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { classes } from "~/lib/srd/classes";
 import { Abilities } from "~/lib/srd/abilities";
+import { type PrismaClient } from "@prisma/client";
+
+async function calculateMaxHp(
+  db: PrismaClient,
+  characterId: string,
+  className: string,
+): Promise<number> {
+  const classData = classes.find(
+    (cls) => cls.name.toLowerCase() === className.toLowerCase(),
+  );
+
+  const baseHp = classData ? parseInt(classData.hp, 10) : 5;
+
+  const hitPointChoices = await db.characterLevel.count({
+    where: {
+      characterId,
+      choices: {
+        some: {
+          choice: LevelChoice.HIT_POINT_SLOT,
+        },
+      },
+    },
+  });
+
+  return baseHp + hitPointChoices;
+}
 
 const createCharacterSchema = z.object({
   name: z
@@ -19,13 +45,10 @@ const createCharacterSchema = z.object({
     .number()
     .min(1, "Level must be at least 1")
     .max(10, "Level must be at most 10"),
-  experience1: z
-    .string()
-    .max(50, "Experience must be less than 50 characters")
-    .optional(),
-  experience2: z
-    .string()
-    .max(50, "Experience must be less than 50 characters")
+  experiences: z
+    .array(z.string())
+    .min(0)
+    .max(2, "Maximum 2 experiences")
     .optional(),
 });
 
@@ -83,13 +106,14 @@ const updateCharacterSchema = z.object({
     .number()
     .min(1, "Level must be at least 1")
     .max(10, "Level must be at most 10"),
-  experience1: z
-    .string()
-    .max(50, "Experience must be less than 50 characters")
-    .optional(),
-  experience2: z
-    .string()
-    .max(50, "Experience must be less than 50 characters")
+  experiences: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        bonus: z.number().default(2),
+      }),
+    )
     .optional(),
 });
 
@@ -375,10 +399,10 @@ export const characterRouter = createTRPCRouter({
       );
 
       // Parse HP and evasion from the class data (convert string to number)
-      const maxHp = classData ? parseInt(classData.hp, 10) : 5;
+      const baseHp = classData ? parseInt(classData.hp, 10) : 5;
       const evasion = classData ? parseInt(classData.evasion, 10) : 10;
 
-      return ctx.db.character.create({
+      const character = await ctx.db.character.create({
         data: {
           name: input.name,
           pronouns: input.pronouns,
@@ -387,19 +411,33 @@ export const characterRouter = createTRPCRouter({
           ancestry: input.ancestry,
           community: input.community,
           level: input.level,
-          experience1: input.experience1,
-          experience2: input.experience2,
-          maxHp: maxHp,
+          maxHp: baseHp,
           evasion: evasion,
           // Ability modifiers default to 0 via schema
           user: { connect: { id: ctx.session.user.id } },
         },
       });
+
+      // Create experiences if provided
+      if (input.experiences && input.experiences.length > 0) {
+        await ctx.db.experience.createMany({
+          data: input.experiences.map((name) => ({
+            name,
+            characterId: character.id,
+            bonus: 2,
+          })),
+        });
+      }
+
+      return character;
     }),
 
   getByUserId: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.character.findMany({
       where: { userId: ctx.session.user.id },
+      include: {
+        experiences: true,
+      },
       orderBy: { createdAt: "desc" },
     });
   }),
@@ -416,6 +454,7 @@ export const characterRouter = createTRPCRouter({
           game: {
             select: { id: true, name: true },
           },
+          experiences: true,
         },
       });
 
@@ -611,9 +650,53 @@ export const characterRouter = createTRPCRouter({
         (cls) => cls.name.toLowerCase() === input.class.toLowerCase(),
       );
 
-      // Parse HP and evasion from the class data (convert string to number)
-      const maxHp = classData ? parseInt(classData.hp, 10) : 5;
+      // Calculate max HP dynamically based on class and level choices
+      const maxHp = await calculateMaxHp(ctx.db, input.id, input.class);
       const evasion = classData ? parseInt(classData.evasion, 10) : 10;
+
+      // Handle experiences update if provided
+      if (input.experiences) {
+        // Get existing experiences
+        const existingExperiences = await ctx.db.experience.findMany({
+          where: { characterId: input.id },
+        });
+
+        // Delete experiences that are not in the new list
+        const newExpIds = input.experiences
+          .filter((exp) => exp.id)
+          .map((exp) => exp.id!);
+        const toDelete = existingExperiences.filter(
+          (exp) => !newExpIds.includes(exp.id),
+        );
+
+        if (toDelete.length > 0) {
+          await ctx.db.experience.deleteMany({
+            where: {
+              id: { in: toDelete.map((exp) => exp.id) },
+            },
+          });
+        }
+
+        // Update or create experiences
+        for (const exp of input.experiences) {
+          if (exp.id) {
+            // Update existing
+            await ctx.db.experience.update({
+              where: { id: exp.id },
+              data: { name: exp.name, bonus: exp.bonus },
+            });
+          } else {
+            // Create new
+            await ctx.db.experience.create({
+              data: {
+                name: exp.name,
+                bonus: exp.bonus,
+                characterId: input.id,
+              },
+            });
+          }
+        }
+      }
 
       return ctx.db.character.update({
         where: { id: input.id },
@@ -625,8 +708,6 @@ export const characterRouter = createTRPCRouter({
           ancestry: input.ancestry,
           community: input.community,
           level: input.level,
-          experience1: input.experience1,
-          experience2: input.experience2,
           maxHp: maxHp,
           evasion: evasion,
         },
@@ -661,7 +742,7 @@ export const characterRouter = createTRPCRouter({
       // Verify the character belongs to the user
       const character = await ctx.db.character.findUnique({
         where: { id: input.characterId },
-        select: { userId: true, level: true },
+        select: { userId: true, level: true, class: true },
       });
 
       if (!character) {
@@ -734,6 +815,16 @@ export const characterRouter = createTRPCRouter({
         updateData.knowledgeMarked = false;
       }
 
+      // Check if hit points choice was selected and recalculate maxHp
+      if (input.choices.includes("hitpoints")) {
+        const newMaxHp = await calculateMaxHp(
+          ctx.db,
+          input.characterId,
+          character.class,
+        );
+        updateData.maxHp = newMaxHp;
+      }
+
       // Update the character's level and potentially unmark traits
       await ctx.db.character.update({
         where: { id: input.characterId },
@@ -778,6 +869,30 @@ export const characterRouter = createTRPCRouter({
       });
     }),
 
+  recalculateMaxHp: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.id },
+        select: { userId: true, class: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update your own characters");
+      }
+
+      const newMaxHp = await calculateMaxHp(ctx.db, input.id, character.class);
+
+      return ctx.db.character.update({
+        where: { id: input.id },
+        data: { maxHp: newMaxHp },
+      });
+    }),
+
   getLevelHistory: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -817,7 +932,16 @@ export const characterRouter = createTRPCRouter({
         throw new Error("You don't have permission to view this character");
       }
 
-      return character.CharacterLevel;
+      const experiences = await ctx.db.experience.findMany({
+        where: { characterId: input.id },
+        orderBy: { createdAt: "asc" },
+      });
+
+      return {
+        characterClass: character.class,
+        experiences: experiences,
+        levels: character.CharacterLevel,
+      };
     }),
 
   selectCard: protectedProcedure

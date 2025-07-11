@@ -28,6 +28,7 @@ interface Character {
 interface CharacterCardsClientProps {
   characterId: string;
   character: Character;
+  debugMode?: boolean;
 }
 
 interface CardSectionProps {
@@ -83,6 +84,7 @@ const CardSection = ({
 export default function CharacterCardsClient({
   characterId,
   character,
+  debugMode = false,
 }: CharacterCardsClientProps) {
   const { data: session } = useSession();
   const isOwner = character.user.id === session?.user.id;
@@ -205,8 +207,8 @@ export default function CharacterCardsClient({
             )}
           </div>
 
-          {/* Show actual slots by level */}
-          {cardData?.actualSlotsByLevel && (
+          {/* Show actual slots by level - debug mode only */}
+          {debugMode && cardData?.actualSlotsByLevel && (
             <div className="space-y-2">
               <p className="text-sm text-slate-300">
                 Card slots by level (higher level slots can be used for lower

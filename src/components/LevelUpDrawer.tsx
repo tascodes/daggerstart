@@ -39,7 +39,7 @@ export default function LevelUpDrawer({
   const [open, setOpen] = useState(false);
 
   // Fetch character level history to count previous choices
-  const { data: levelHistory } = api.character.getLevelHistory.useQuery(
+  const { data: historyData } = api.character.getLevelHistory.useQuery(
     { id: characterId },
     { enabled: open },
   );
@@ -62,7 +62,7 @@ export default function LevelUpDrawer({
 
   // Count previous choices from level history within current bracket
   const getPreviousChoiceCount = (choiceId: string): number => {
-    if (!levelHistory) return 0;
+    if (!historyData?.levels) return 0;
 
     const choiceMap: Record<string, string> = {
       traits: "TRAIT_BONUS",
@@ -92,7 +92,7 @@ export default function LevelUpDrawer({
     }
 
     // Only count choices made within the current bracket
-    return levelHistory.reduce((count, level) => {
+    return historyData.levels.reduce((count, level) => {
       if (level.level >= bracketStart && level.level < nextLevel) {
         return (
           count +

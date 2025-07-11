@@ -3,16 +3,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Lightbulb } from "lucide-react";
 
+interface Experience {
+  id: string;
+  name: string;
+  bonus: number;
+}
+
 interface CharacterExperiencesProps {
-  experience1?: string | null;
-  experience2?: string | null;
+  experiences?: Experience[];
 }
 
 export default function CharacterExperiences({
-  experience1,
-  experience2,
+  experiences,
 }: CharacterExperiencesProps) {
-  const hasExperiences = experience1 ?? experience2;
+  const hasExperiences = experiences && experiences.length > 0;
 
   return (
     <Card className="border-slate-700 bg-slate-800 shadow-lg">
@@ -29,29 +33,24 @@ export default function CharacterExperiences({
           </div>
         ) : (
           <div className="space-y-4">
-            {experience1 && (
-              <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
+            {experiences?.map((experience, index) => (
+              <div
+                key={experience.id}
+                className="rounded-lg border border-slate-600 bg-slate-700 p-4"
+              >
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-sky-400"></div>
+                  <div
+                    className={`h-2 w-2 rounded-full ${index === 0 ? "bg-sky-400" : "bg-yellow-400"}`}
+                  ></div>
                   <span className="text-sm font-medium text-slate-300">
-                    Experience 1
+                    Experience {index + 1}
                   </span>
                 </div>
-                <p className="text-white">{experience1}</p>
+                <p className="text-white">
+                  {experience.name} +{experience.bonus}
+                </p>
               </div>
-            )}
-
-            {experience2 && (
-              <div className="rounded-lg border border-slate-600 bg-slate-700 p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
-                  <span className="text-sm font-medium text-slate-300">
-                    Experience 2
-                  </span>
-                </div>
-                <p className="text-white">{experience2}</p>
-              </div>
-            )}
+            ))}
           </div>
         )}
       </CardContent>

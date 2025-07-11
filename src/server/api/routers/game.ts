@@ -38,6 +38,13 @@ const rollDamageSchema = z.object({
   characterId: z.string().optional(),
 });
 
+const rollCustomDiceSchema = z.object({
+  gameId: z.string(),
+  name: z.string().min(1, "Roll name is required"),
+  diceExpression: z.string().min(1, "Dice expression is required"),
+  characterId: z.string().optional(),
+});
+
 export const gameRouter = createTRPCRouter({
   create: protectedProcedure
     .input(createGameSchema)
@@ -741,5 +748,99 @@ export const gameRouter = createTRPCRouter({
           gameEmitter.off("fearUpdate", onFearUpdate);
         };
       });
+    }),
+
+  rollCustomDice: protectedProcedure
+    .input(rollCustomDiceSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Import the dice roller
+      const { DiceRoller } = await import("@dice-roller/rpg-dice-roller");
+
+      // Verify user is in the game
+      const game = await ctx.db.game.findFirst({
+        where: {
+          id: input.gameId,
+          OR: [
+            { gameMasterId: ctx.session.user.id },
+            { characters: { some: { userId: ctx.session.user.id } } },
+          ],
+        },
+      });
+
+      if (!game) {
+        throw new Error("You are not authorized to roll dice in this game");
+      }
+
+      // Verify character belongs to user if provided
+      if (input.characterId) {
+        const character = await ctx.db.character.findFirst({
+          where: {
+            id: input.characterId,
+            userId: ctx.session.user.id,
+          },
+        });
+        if (!character) {
+          throw new Error("Character not found or not owned by you");
+        }
+      }
+
+      try {
+        // Create a new dice roller instance and roll the dice
+        const diceRoller = new DiceRoller();
+        const rollResult = diceRoller.roll(input.diceExpression) as any;
+
+        // Extract results
+        const total = rollResult.total as number;
+        const individualResults: number[] = [];
+
+        // Extract individual die results from the notation
+        rollResult.rolls.forEach((rollGroup: any) => {
+          rollGroup.rolls.forEach((die: any) => {
+            individualResults.push(die.value);
+          });
+        });
+
+        // Save to database
+        const diceRoll = await ctx.db.diceRoll.create({
+          data: {
+            name: input.name,
+            rollType: "Custom",
+            diceExpression: input.diceExpression,
+            individualResults,
+            total,
+            gameId: input.gameId,
+            userId: ctx.session.user.id,
+            characterId: input.characterId,
+          },
+          include: {
+            user: { select: { id: true, name: true, image: true } },
+            character: { select: { id: true, name: true } },
+          },
+        });
+
+        // Emit event for real-time updates
+        gameEmitter.emit("newRoll", {
+          id: diceRoll.id,
+          gameId: input.gameId,
+          name: diceRoll.name,
+          rollType: diceRoll.rollType,
+          total: diceRoll.total,
+          modifier: null,
+          finalTotal: null,
+          hopeResult: null,
+          fearResult: null,
+          diceExpression: diceRoll.diceExpression,
+          individualResults: diceRoll.individualResults,
+          user: diceRoll.user,
+          character: diceRoll.character,
+          createdAt: diceRoll.createdAt,
+        } as DiceRollEventData);
+
+        return diceRoll;
+      } catch (error) {
+        throw new Error(
+          `Invalid dice expression "${input.diceExpression}": ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
     }),
 });

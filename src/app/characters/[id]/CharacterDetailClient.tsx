@@ -103,10 +103,7 @@ export default function CharacterDetailClient({
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Experiences Section */}
         <div>
-          <CharacterExperiences
-            experience1={character.experience1}
-            experience2={character.experience2}
-          />
+          <CharacterExperiences experiences={character.experiences} />
         </div>
 
         {/* Additional Info Section */}

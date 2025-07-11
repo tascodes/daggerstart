@@ -12,6 +12,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { TrendingUp, CheckCircle, Award, Star } from "lucide-react";
 import { api } from "~/trpc/react";
+import { classes } from "~/lib/srd/classes";
 
 interface LevelHistoryDrawerProps {
   characterId: string;
@@ -26,7 +27,7 @@ export default function LevelHistoryDrawer({
 }: LevelHistoryDrawerProps) {
   const [open, setOpen] = useState(false);
 
-  const { data: levelHistory, isLoading } =
+  const { data: historyData, isLoading } =
     api.character.getLevelHistory.useQuery(
       { id: characterId },
       { enabled: open },
@@ -45,6 +46,13 @@ export default function LevelHistoryDrawer({
       MULTICLASS: "Multiclass",
     };
     return choiceNames[choice] ?? choice;
+  };
+
+  const getFormattedClassName = (className: string): string => {
+    const classData = classes.find(
+      (cls) => cls.name.toLowerCase() === className.toLowerCase(),
+    );
+    return classData?.name ?? className;
   };
 
   return (
@@ -70,7 +78,7 @@ export default function LevelHistoryDrawer({
               {/* Show levels 1 through current level */}
               {Array.from({ length: currentLevel }, (_, i) => i + 1).map(
                 (level) => {
-                  const levelData = levelHistory?.find(
+                  const levelData = historyData?.levels.find(
                     (l) => l.level === level,
                   );
 
@@ -202,9 +210,43 @@ export default function LevelHistoryDrawer({
                         </div>
                       ) : (
                         <div className="text-sm text-slate-400">
-                          {level === 1
-                            ? "Starting level"
-                            : "Level gained outside system"}
+                          {level === 1 ? (
+                            <div className="space-y-2">
+                              <div>
+                                <h4 className="text-sm font-semibold text-white">
+                                  Starting Class:
+                                </h4>
+                                <div className="flex items-center gap-2 text-sm text-slate-300">
+                                  <CheckCircle className="h-4 w-4 text-green-400" />
+                                  {historyData?.characterClass &&
+                                    getFormattedClassName(
+                                      historyData.characterClass,
+                                    )}
+                                </div>
+                              </div>
+                              {historyData?.experiences &&
+                                historyData.experiences.length > 0 && (
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-white">
+                                      Starting Experiences:
+                                    </h4>
+                                    <div className="space-y-1">
+                                      {historyData.experiences.map((exp) => (
+                                        <div
+                                          key={exp.id}
+                                          className="flex items-center gap-2 text-sm text-slate-300"
+                                        >
+                                          <CheckCircle className="h-4 w-4 text-green-400" />
+                                          {exp.name} +{exp.bonus}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
+                          ) : (
+                            "Level gained outside system"
+                          )}
                         </div>
                       )}
                     </div>

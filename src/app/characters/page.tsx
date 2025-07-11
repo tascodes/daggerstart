@@ -212,25 +212,24 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {(character.experience1 ?? character.experience2) && (
-                      <div className="mb-4">
-                        <h4 className="mb-2 text-sm font-semibold text-slate-300">
-                          Experiences:
-                        </h4>
-                        <div className="space-y-1">
-                          {character.experience1 && (
-                            <p className="text-xs text-slate-400">
-                              • {character.experience1}
-                            </p>
-                          )}
-                          {character.experience2 && (
-                            <p className="text-xs text-slate-400">
-                              • {character.experience2}
-                            </p>
-                          )}
+                    {character.experiences &&
+                      character.experiences.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="mb-2 text-sm font-semibold text-slate-300">
+                            Experiences:
+                          </h4>
+                          <div className="space-y-1">
+                            {character.experiences.map((exp) => (
+                              <p
+                                key={exp.id}
+                                className="text-xs text-slate-400"
+                              >
+                                • {exp.name} +{exp.bonus}
+                              </p>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-slate-500">

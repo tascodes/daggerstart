@@ -59,8 +59,7 @@ const formSchema = z.object({
     .number()
     .min(1, "Level must be at least 1")
     .max(10, "Level must be at most 10"),
-  experience1: z.string().max(50, "Experience must be less than 50 characters"),
-  experience2: z.string().max(50, "Experience must be less than 50 characters"),
+  experiences: z.array(z.string()).min(0).max(2).default([]),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -109,8 +108,7 @@ export default function NewCharacterPage() {
       ancestry: "",
       community: "",
       level: 1,
-      experience1: "",
-      experience2: "",
+      experiences: [],
     },
   });
 
@@ -146,8 +144,8 @@ export default function NewCharacterPage() {
         ancestry: existingCharacter.ancestry,
         community: existingCharacter.community,
         level: existingCharacter.level,
-        experience1: existingCharacter.experience1 ?? "",
-        experience2: existingCharacter.experience2 ?? "",
+        experiences:
+          existingCharacter.experiences?.map((exp) => exp.name) ?? [],
       });
     }
   }, [existingCharacter, isEditMode, form]);
@@ -163,8 +161,11 @@ export default function NewCharacterPage() {
         ancestry: data.ancestry,
         community: data.community,
         level: data.level,
-        experience1: data.experience1,
-        experience2: data.experience2,
+        experiences: data.experiences.map((name, index) => ({
+          id: existingCharacter?.experiences?.[index]?.id,
+          name,
+          bonus: existingCharacter?.experiences?.[index]?.bonus ?? 2,
+        })),
       });
     } else {
       createCharacter.mutate({
@@ -175,8 +176,7 @@ export default function NewCharacterPage() {
         ancestry: data.ancestry,
         community: data.community,
         level: data.level,
-        experience1: data.experience1,
-        experience2: data.experience2,
+        experiences: data.experiences,
       });
     }
   };
@@ -1068,46 +1068,41 @@ export default function NewCharacterPage() {
                           Experience&apos;s modifier to an action or reaction
                           roll.
                         </div>
-                        <FormField
-                          key="experiences-experience1"
-                          control={form.control}
-                          name="experience1"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-white">
-                                Experience
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="What experience defines your character?"
-                                  {...field}
-                                  className="border-slate-600 bg-slate-700 text-white placeholder-slate-400"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          key="experiences-experience2"
-                          control={form.control}
-                          name="experience2"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-white">
-                                Experience
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="What experience defines your character?"
-                                  {...field}
-                                  className="border-slate-600 bg-slate-700 text-white placeholder-slate-400"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {[0, 1].map((index) => (
+                          <FormField
+                            key={`experiences-${index}`}
+                            control={form.control}
+                            name={`experiences.${index}`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">
+                                  Experience {index + 1}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="What experience defines your character?"
+                                    {...field}
+                                    value={field.value ?? ""}
+                                    onChange={(e) => {
+                                      const currentExperiences =
+                                        form.getValues("experiences") ?? [];
+                                      const newExperiences = [
+                                        ...currentExperiences,
+                                      ];
+                                      newExperiences[index] = e.target.value;
+                                      form.setValue(
+                                        "experiences",
+                                        newExperiences,
+                                      );
+                                    }}
+                                    className="border-slate-600 bg-slate-700 text-white placeholder-slate-400"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ))}
                         <div className="text-slate-400">
                           <b>Backgrounds like:</b> Bodyguard, Con Artist,
                           Merchant, Noble, Pirate, Scholar, Thief
