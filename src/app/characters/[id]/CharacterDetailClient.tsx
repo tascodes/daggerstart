@@ -5,7 +5,6 @@ import CharacterExperiences from "~/components/CharacterExperiences";
 import CharacterTraits from "~/components/CharacterTraits";
 import HealthSection from "~/components/HealthSection";
 import DefenseSection from "~/components/DefenseSection";
-import GoldSection from "~/components/GoldSection";
 import FearBar from "~/components/FearBar";
 import { api } from "~/trpc/react";
 
@@ -71,15 +70,6 @@ export default function CharacterDetailClient({
       {/* Defense Section */}
       <div className="mb-8">
         <DefenseSection
-          character={character}
-          isOwner={isOwner}
-          onUpdate={() => void refetch()}
-        />
-      </div>
-
-      {/* Gold Section */}
-      <div className="mb-8">
-        <GoldSection
           character={character}
           isOwner={isOwner}
           onUpdate={() => void refetch()}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
+import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/trpc/react";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
@@ -19,8 +20,6 @@ interface GoldSectionProps {
 }
 
 const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
-  const handfulsDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const bagsDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const utils = api.useUtils();
 
   const updateGoldStat = api.character.updateGoldStat.useMutation({
@@ -100,36 +99,28 @@ const GoldSection = ({ character, isOwner, onUpdate }: GoldSectionProps) => {
     [character.id, updateGoldStat],
   );
 
-  const handleHandfulsChange = (value: number) => {
-    const clampedValue = Math.max(0, Math.min(10, value));
-
-    // Clear existing timer
-    if (handfulsDebounceTimer.current) {
-      clearTimeout(handfulsDebounceTimer.current);
-    }
-
-    // Set new timer for API call (500ms debounce)
-    const newTimer = setTimeout(() => {
+  const debouncedHandfulsUpdate = useDebounceCallback(
+    (value: number) => {
+      const clampedValue = Math.max(0, Math.min(10, value));
       debouncedGoldUpdate("goldHandfuls", clampedValue);
-    }, 500);
+    },
+    500,
+  );
 
-    handfulsDebounceTimer.current = newTimer;
+  const debouncedBagsUpdate = useDebounceCallback(
+    (value: number) => {
+      const clampedValue = Math.max(0, Math.min(10, value));
+      debouncedGoldUpdate("goldBags", clampedValue);
+    },
+    500,
+  );
+
+  const handleHandfulsChange = (value: number) => {
+    debouncedHandfulsUpdate(value);
   };
 
   const handleBagsChange = (value: number) => {
-    const clampedValue = Math.max(0, Math.min(10, value));
-
-    // Clear existing timer
-    if (bagsDebounceTimer.current) {
-      clearTimeout(bagsDebounceTimer.current);
-    }
-
-    // Set new timer for API call (500ms debounce)
-    const newTimer = setTimeout(() => {
-      debouncedGoldUpdate("goldBags", clampedValue);
-    }, 500);
-
-    bagsDebounceTimer.current = newTimer;
+    debouncedBagsUpdate(value);
   };
 
   const handleChestChange = (checked: boolean) => {

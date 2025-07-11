@@ -63,7 +63,9 @@ export default function AddItemModal({
     // Armor and weapons sorted by tier, then alphabetically
     ...Armors.map((armor) => ({ ...armor, type: "ARMOR" as ItemType })).sort(
       (a, b) => {
-        if (a.tier !== b.tier) return a.tier - b.tier;
+        const aTier = parseInt(a.tier);
+        const bTier = parseInt(b.tier);
+        if (aTier !== bTier) return aTier - bTier;
         return a.name.localeCompare(b.name);
       },
     ),
@@ -71,7 +73,9 @@ export default function AddItemModal({
       ...weapon,
       type: "WEAPON" as ItemType,
     })).sort((a, b) => {
-      if (a.tier !== b.tier) return a.tier - b.tier;
+      const aTier = parseInt(a.tier);
+      const bTier = parseInt(b.tier);
+      if (aTier !== bTier) return aTier - bTier;
       return a.name.localeCompare(b.name);
     }),
   ];
@@ -89,7 +93,7 @@ export default function AddItemModal({
       filterTier !== "ALL" &&
       (item.type === "ARMOR" || item.type === "WEAPON")
     ) {
-      matchesTier = (item as any).tier === filterTier;
+      matchesTier = parseInt((item as any).tier) === filterTier;
     }
 
     return matchesSearch && matchesType && matchesTier;
@@ -98,8 +102,8 @@ export default function AddItemModal({
   // Get unique tiers from armor and weapons for filter options
   const availableTiers = Array.from(
     new Set([
-      ...Armors.map((armor) => armor.tier),
-      ...Weapons.map((weapon) => weapon.tier),
+      ...Armors.map((armor) => parseInt(armor.tier)),
+      ...Weapons.map((weapon) => parseInt(weapon.tier)),
     ]),
   ).sort((a, b) => a - b);
 

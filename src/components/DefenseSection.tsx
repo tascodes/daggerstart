@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
+import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/trpc/react";
 import ArmorBar from "./ArmorBar";
 import { Input } from "./ui/input";
@@ -22,7 +23,6 @@ const DefenseSection = ({
   isOwner,
   onUpdate,
 }: DefenseSectionProps) => {
-  const evasionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const utils = api.useUtils();
 
   const updateHealthStat = api.character.updateHealthStat.useMutation({
@@ -110,20 +110,16 @@ const DefenseSection = ({
     [character.id, updateDefenseStat],
   );
 
-  const handleEvasionChange = (value: number) => {
-    const clampedValue = Math.max(0, Math.min(20, value));
-
-    // Clear existing timer
-    if (evasionDebounceTimer.current) {
-      clearTimeout(evasionDebounceTimer.current);
-    }
-
-    // Set new timer for API call (500ms debounce)
-    const newTimer = setTimeout(() => {
+  const debouncedEvasionChange = useDebounceCallback(
+    (value: number) => {
+      const clampedValue = Math.max(0, Math.min(20, value));
       debouncedEvasionUpdate(clampedValue);
-    }, 500);
+    },
+    500,
+  );
 
-    evasionDebounceTimer.current = newTimer;
+  const handleEvasionChange = (value: number) => {
+    debouncedEvasionChange(value);
   };
 
   return (

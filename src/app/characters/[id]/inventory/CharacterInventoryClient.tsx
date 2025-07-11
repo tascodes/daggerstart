@@ -17,6 +17,7 @@ import {
   Trash2,
   Minus,
 } from "lucide-react";
+import GoldSection from "~/components/GoldSection";
 import { api } from "~/trpc/react";
 import { type ItemType } from "@prisma/client";
 import AddItemModal from "./AddItemModal";
@@ -46,6 +47,8 @@ export default function CharacterInventoryClient({
   const { data: inventory, refetch } = api.character.getInventory.useQuery({
     characterId,
   });
+
+  const refetchCharacter = () => void utils.character.getById.invalidate({ id: characterId });
 
   const utils = api.useUtils();
 
@@ -106,8 +109,9 @@ export default function CharacterInventoryClient({
         const aDetails = getItemDetails(a.itemName, a.itemType) as Armor;
         const bDetails = getItemDetails(b.itemName, b.itemType) as Armor;
         if (aDetails && bDetails) {
-          if (aDetails.tier !== bDetails.tier)
-            return aDetails.tier - bDetails.tier;
+          const aTier = parseInt(aDetails.tier);
+          const bTier = parseInt(bDetails.tier);
+          if (aTier !== bTier) return aTier - bTier;
         }
         return a.itemName.localeCompare(b.itemName);
       }),
@@ -117,8 +121,9 @@ export default function CharacterInventoryClient({
         const aDetails = getItemDetails(a.itemName, a.itemType) as Weapon;
         const bDetails = getItemDetails(b.itemName, b.itemType) as Weapon;
         if (aDetails && bDetails) {
-          if (aDetails.tier !== bDetails.tier)
-            return aDetails.tier - bDetails.tier;
+          const aTier = parseInt(aDetails.tier);
+          const bTier = parseInt(bDetails.tier);
+          if (aTier !== bTier) return aTier - bTier;
         }
         return a.itemName.localeCompare(b.itemName);
       }),
@@ -284,6 +289,17 @@ export default function CharacterInventoryClient({
 
   return (
     <div className="space-y-6">
+      {/* Gold Section */}
+      {character && (
+        <div className="mb-6">
+          <GoldSection
+            character={character}
+            isOwner={isOwner}
+            onUpdate={refetchCharacter}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Inventory</h1>
