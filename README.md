@@ -3,47 +3,15 @@
 A modern, web-based Virtual Tabletop (VTT) specifically designed for playing Daggerheart RPG campaigns. Built with Next.js, TypeScript, and real-time functionality to enhance your Daggerheart gaming experience.
 
 ## Features
-
-### 🎲 Dice Rolling System
-
-- **Action Dice (2d12)**: Roll Hope and Fear dice with automatic outcome calculation
-- **Damage Dice**: Support for all standard dice types (d4, d6, d8, d10, d12, d20)
-- **Real-time Roll Feed**: See all players' rolls in real-time with floating notifications
-
-### 👥 Character Management
-
-- **Complete Character Sheets**: Full support for Daggerheart character creation and management
-- **Ability Scores**: Track all six abilities (Agility, Strength, Finesse, Instinct, Presence, Knowledge)
-- **Health & Stress**: Interactive bars for HP, Stress, and Hope with optimistic updates
-- **Damage Thresholds**: Configure Major and Severe damage thresholds
-- **Defense Stats**: Evasion and Armor tracking with interactive bars
-- **Wealth System**: Gold management with Handfuls, Bags, and Chest tracking
-- **Character Navigation**: Tabbed interface for character details and domain cards
-
-### 🏰 Campaign Management
-
-- **Game Creation**: Create and manage Daggerheart campaigns as a Game Master
-- **Player Management**: Add/remove characters from games with proper permission controls
-- **Game Master Tools**: Dedicated GM interface with enhanced controls
-- **Character Assignment**: Flexible character-to-game assignment system
-
-### 🃏 Domain Cards
-
-- **Card Management**: Dedicated interface for managing character domain cards
-- **Character Integration**: Seamless navigation between character details and cards
-
-### 🔄 Real-time Features
-
-- **Live Dice Rolls**: All players see dice rolls instantly via SSE
+- Dice Rolling
+- Character Creation / Management
+- Campaign Management
+- Automated Fear and Hope
+- Inventory
 
 ## Tech Stack
-
-- **Frontend**: Next.js 15 with App Router, React, TypeScript
-- **Backend**: tRPC for type-safe API routes
-- **Database**: MySQL with Prisma ORM
-- **Authentication**: NextAuth.js with Discord provider
-- **Styling**: Tailwind CSS with shadcn/ui components
-- **Real-time**: WebSocket subscriptions for live updates
+- Created with [Create T3 App](https://create.t3.gg/)
+- This whole repo is vibe-coded with Claude Code. Please don't read the code in here, I did not write it.
 
 ## Getting Started
 
