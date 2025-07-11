@@ -12,6 +12,22 @@ import {
 } from "~/server/api/events";
 import { getDiceRollOutcome } from "~/utils/dice";
 
+// Define types for dice roll results since rpg-dice-roller doesn't have proper TypeScript types
+interface DiceRollResult {
+  total: number;
+  rolls: DiceRollGroup[];
+  output: string;
+}
+
+interface DiceRollGroup {
+  rolls?: IndividualRoll[];
+  value?: number;
+}
+
+interface IndividualRoll {
+  value: number;
+}
+
 const createGameSchema = z.object({
   name: z
     .string()
@@ -787,7 +803,9 @@ export const gameRouter = createTRPCRouter({
       try {
         // Create a new dice roller instance and roll the dice
         const diceRoller = new DiceRoller();
-        const rollResult = diceRoller.roll(input.diceExpression) as any;
+        const rollResult = diceRoller.roll(
+          input.diceExpression,
+        ) as DiceRollResult;
 
         console.log(
           "Dice roll result structure:",
@@ -795,15 +813,15 @@ export const gameRouter = createTRPCRouter({
         );
 
         // Extract results
-        const total = rollResult.total as number;
+        const total = rollResult.total;
         const individualResults: number[] = [];
 
         // Extract individual die results from the notation
         // The structure varies depending on the dice expression
         if (rollResult.rolls && Array.isArray(rollResult.rolls)) {
-          rollResult.rolls.forEach((rollGroup: any) => {
+          rollResult.rolls.forEach((rollGroup: DiceRollGroup) => {
             if (rollGroup.rolls && Array.isArray(rollGroup.rolls)) {
-              rollGroup.rolls.forEach((die: any) => {
+              rollGroup.rolls.forEach((die: IndividualRoll) => {
                 if (die.value !== undefined) {
                   individualResults.push(die.value);
                 }
@@ -818,8 +836,9 @@ export const gameRouter = createTRPCRouter({
         // If we couldn't extract individual results, try alternative approach
         if (individualResults.length === 0 && rollResult.output) {
           // Parse from the output string as fallback
-          const matches = rollResult.output.match(/\[([^\]]+)\]/);
-          if (matches) {
+          const regex = /\[([^\]]+)\]/;
+          const matches = regex.exec(rollResult.output);
+          if (matches?.[1]) {
             const rollsString = matches[1];
             const rolls = rollsString
               .split(",")

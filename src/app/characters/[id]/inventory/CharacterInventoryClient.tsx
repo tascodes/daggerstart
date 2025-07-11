@@ -186,7 +186,10 @@ export default function CharacterInventoryClient({
     }
   };
 
-  const renderItemDetails = (item: any, itemType: ItemType) => {
+  const renderItemDetails = (
+    item: { itemName: string },
+    itemType: ItemType,
+  ) => {
     const details = getItemDetails(item.itemName, itemType);
     if (!details) return null;
 

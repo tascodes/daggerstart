@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { getCharacterSRDData } from "~/lib/utils/srd-mapping";
+import { api } from "~/trpc/react";
+import { LevelChoice } from "@prisma/client";
 
 interface Character {
   id: string;
@@ -21,6 +23,40 @@ const ClassFeatures = ({ character }: ClassFeaturesProps) => {
     character.class,
     character.subclass,
   );
+
+  // Get level history to determine which subclass features to show
+  const { data: levelHistory } = api.character.getLevelHistory.useQuery({
+    id: character.id,
+  });
+
+  // Determine which subclass features to show based on SUBCLASS_CARD choices
+  const getSubclassFeaturesToShow = () => {
+    if (!levelHistory || !subclassData)
+      return {
+        showFoundation: true,
+        showSpecialization: false,
+        showMastery: false,
+      };
+
+    const subclassCardCount = levelHistory.levels.reduce((count, level) => {
+      const hasSubclassCard = level.choices.some(
+        (choice) => choice.choice === LevelChoice.SUBCLASS_CARD,
+      );
+      return count + (hasSubclassCard ? 1 : 0);
+    }, 0);
+
+    // Always show Foundation features if character has selected a subclass
+    // Show Specialization if they've taken 1+ SUBCLASS_CARD choices
+    // Show Mastery if they've taken 2+ SUBCLASS_CARD choices
+    return {
+      showFoundation: true,
+      showSpecialization: subclassCardCount >= 1,
+      showMastery: subclassCardCount >= 2,
+    };
+  };
+
+  const { showFoundation, showSpecialization, showMastery } =
+    getSubclassFeaturesToShow();
 
   if (!classData && !subclassData) {
     return null;
@@ -122,7 +158,8 @@ const ClassFeatures = ({ character }: ClassFeaturesProps) => {
             )}
 
             {/* Foundation Features */}
-            {subclassData.foundations &&
+            {showFoundation &&
+              subclassData.foundations &&
               subclassData.foundations.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-semibold text-white">
@@ -135,6 +172,46 @@ const ClassFeatures = ({ character }: ClassFeaturesProps) => {
                       </h5>
                       <p className="text-sm whitespace-pre-line text-slate-300">
                         {foundation.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            {/* Specialization Features */}
+            {showSpecialization &&
+              subclassData.specializations &&
+              subclassData.specializations.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-white">
+                    Specialization Features
+                  </h4>
+                  {subclassData.specializations.map((specialization, index) => (
+                    <div key={index} className="rounded-lg bg-slate-700 p-4">
+                      <h5 className="mb-2 font-semibold text-blue-400">
+                        {specialization.name}
+                      </h5>
+                      <p className="text-sm whitespace-pre-line text-slate-300">
+                        {specialization.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            {/* Mastery Features */}
+            {showMastery &&
+              subclassData.masteries &&
+              subclassData.masteries.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-white">Mastery Features</h4>
+                  {subclassData.masteries.map((mastery, index) => (
+                    <div key={index} className="rounded-lg bg-slate-700 p-4">
+                      <h5 className="mb-2 font-semibold text-purple-400">
+                        {mastery.name}
+                      </h5>
+                      <p className="text-sm whitespace-pre-line text-slate-300">
+                        {mastery.text}
                       </p>
                     </div>
                   ))}

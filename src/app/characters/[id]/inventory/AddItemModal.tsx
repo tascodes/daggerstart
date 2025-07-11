@@ -15,7 +15,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Search, Package, Shield, Sword, Zap, Plus } from "lucide-react";
 import { api } from "~/trpc/react";
-import { ItemType } from "@prisma/client";
+import { type ItemType } from "@prisma/client";
 import { Items, type Item } from "~/lib/srd/items";
 import { Armors, type Armor } from "~/lib/srd/armor";
 import { Weapons, type Weapon } from "~/lib/srd/weapons";
@@ -27,6 +27,12 @@ interface AddItemModalProps {
   characterId: string;
   onItemAdded: () => void;
 }
+
+type UnifiedItem =
+  | (Item & { type: "ITEM" })
+  | (Consumable & { type: "CONSUMABLE" })
+  | (Armor & { type: "ARMOR" })
+  | (Weapon & { type: "WEAPON" });
 
 export default function AddItemModal({
   isOpen,
@@ -51,17 +57,17 @@ export default function AddItemModal({
   });
 
   // Combine all items with their types and sort them
-  const allItems = [
+  const allItems: UnifiedItem[] = [
     // Items and consumables sorted alphabetically
-    ...Items.map((item) => ({ ...item, type: "ITEM" as ItemType })).sort(
-      (a, b) => a.name.localeCompare(b.name),
+    ...Items.map((item) => ({ ...item, type: "ITEM" as const })).sort((a, b) =>
+      a.name.localeCompare(b.name),
     ),
     ...Consumables.map((consumable) => ({
       ...consumable,
-      type: "CONSUMABLE" as ItemType,
+      type: "CONSUMABLE" as const,
     })).sort((a, b) => a.name.localeCompare(b.name)),
     // Armor and weapons sorted by tier, then alphabetically
-    ...Armors.map((armor) => ({ ...armor, type: "ARMOR" as ItemType })).sort(
+    ...Armors.map((armor) => ({ ...armor, type: "ARMOR" as const })).sort(
       (a, b) => {
         const aTier = parseInt(a.tier);
         const bTier = parseInt(b.tier);
@@ -71,7 +77,7 @@ export default function AddItemModal({
     ),
     ...Weapons.map((weapon) => ({
       ...weapon,
-      type: "WEAPON" as ItemType,
+      type: "WEAPON" as const,
     })).sort((a, b) => {
       const aTier = parseInt(a.tier);
       const bTier = parseInt(b.tier);
@@ -93,7 +99,7 @@ export default function AddItemModal({
       filterTier !== "ALL" &&
       (item.type === "ARMOR" || item.type === "WEAPON")
     ) {
-      matchesTier = parseInt((item as any).tier) === filterTier;
+      matchesTier = parseInt((item as Armor | Weapon).tier) === filterTier;
     }
 
     return matchesSearch && matchesType && matchesTier;
@@ -137,7 +143,7 @@ export default function AddItemModal({
     }
   };
 
-  const handleAddItem = (item: any) => {
+  const handleAddItem = (item: UnifiedItem) => {
     addItemMutation.mutate({
       characterId,
       itemName: item.name,
@@ -146,7 +152,7 @@ export default function AddItemModal({
     });
   };
 
-  const renderItemDetails = (item: any) => {
+  const renderItemDetails = (item: UnifiedItem) => {
     switch (item.type) {
       case "ITEM":
       case "CONSUMABLE":
@@ -352,7 +358,7 @@ export default function AddItemModal({
                               variant="outline"
                               className="border-yellow-500 text-xs text-yellow-400"
                             >
-                              Tier {(item as any).tier}
+                              Tier {(item as Armor | Weapon).tier}
                             </Badge>
                           )}
                         </div>

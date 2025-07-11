@@ -1,11 +1,12 @@
 import CharacterInventoryClient from "./CharacterInventoryClient";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function CharacterInventoryPage({ params }: PageProps) {
-  return <CharacterInventoryClient characterId={params.id} />;
+  const { id } = await params;
+  return <CharacterInventoryClient characterId={id} />;
 }
