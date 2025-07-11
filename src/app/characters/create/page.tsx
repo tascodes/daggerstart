@@ -220,17 +220,20 @@ export default function NewCharacterPage() {
         </h1>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-8">
-            {/* Left Sidebar - Navigation */}
-            <div className="w-64 flex-shrink-0">
-              <nav className="space-y-2">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-8 sm:flex-row"
+          >
+            {/* Navigation - Top on mobile, Left sidebar on desktop */}
+            <div className="w-full sm:w-64 sm:flex-shrink-0">
+              <nav className="flex gap-2 overflow-x-auto pb-2 sm:flex-col sm:overflow-x-visible sm:pb-0">
                 {Object.entries(SECTIONS).map(([key, label]) => (
                   <Button
                     key={key}
                     type="button"
                     onClick={() => setActiveSection(key as SectionKey)}
                     variant={activeSection === key ? "default" : "secondary"}
-                    className={`w-full justify-start font-medium ${
+                    className={`flex-shrink-0 justify-start font-medium sm:w-full ${
                       activeSection === key
                         ? "bg-sky-500 text-white hover:bg-sky-600"
                         : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
@@ -242,7 +245,7 @@ export default function NewCharacterPage() {
               </nav>
 
               {/* Create Character Button */}
-              <div className="mt-8">
+              <div className="mt-4 sm:mt-8">
                 <Button
                   type="submit"
                   disabled={
@@ -264,7 +267,7 @@ export default function NewCharacterPage() {
               </div>
             </div>
 
-            {/* Right Content - Form Section */}
+            {/* Form Section - Full width on mobile */}
             <div className="flex-1">
               <div className="rounded-lg bg-slate-800 p-6 shadow-lg">
                 {isEditMode && isLoadingCharacter ? (
