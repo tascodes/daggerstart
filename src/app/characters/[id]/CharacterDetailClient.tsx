@@ -103,7 +103,11 @@ export default function CharacterDetailClient({
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Experiences Section */}
         <div>
-          <CharacterExperiences experiences={character.experiences} />
+          <CharacterExperiences 
+            experiences={character.experiences} 
+            isOwner={isOwner}
+            onUpdate={() => void refetch()}
+          />
         </div>
 
         {/* Additional Info Section */}

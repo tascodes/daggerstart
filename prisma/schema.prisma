@@ -133,6 +133,7 @@ model Character {
     CharacterLevel CharacterLevel[]
     selectedCards  SelectedCard[]
     experiences    Experience[]
+    inventoryItems InventoryItem[]
 
     @@index([userId])
     @@index([gameId])
@@ -300,4 +301,26 @@ model Experience {
     characterId String
 
     @@index([characterId])
+}
+
+enum ItemType {
+    ITEM
+    ARMOR
+    WEAPON
+    CONSUMABLE
+}
+
+model InventoryItem {
+    id          String    @id @default(cuid())
+    itemName    String    // Name of the item from SRD
+    itemType    ItemType  // Type of item (ITEM, ARMOR, WEAPON, CONSUMABLE)
+    quantity    Int       @default(1)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+    characterId String
+
+    @@index([characterId])
+    @@index([itemType])
 }

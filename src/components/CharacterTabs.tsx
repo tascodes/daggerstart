@@ -27,6 +27,14 @@ const CharacterTabs = ({ characterId, activeTab }: CharacterTabsProps) => {
         activeTab === "cards" ||
         pathname === `/characters/${characterId}/cards`,
     },
+    {
+      id: "inventory",
+      label: "Inventory",
+      href: `/characters/${characterId}/inventory`,
+      isActive:
+        activeTab === "inventory" ||
+        pathname === `/characters/${characterId}/inventory`,
+    },
   ];
 
   return (

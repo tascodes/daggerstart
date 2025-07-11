@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LevelChoice } from "@prisma/client";
+import { LevelChoice, ItemType } from "@prisma/client";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { classes } from "~/lib/srd/classes";
@@ -83,6 +83,27 @@ const updateGoldStatSchema = z.object({
 const updateGoldChestSchema = z.object({
   id: z.string(),
   hasChest: z.boolean(),
+});
+
+const updateExperienceBonusSchema = z.object({
+  experienceId: z.string(),
+  bonus: z.number().int().min(0).max(10),
+});
+
+const addInventoryItemSchema = z.object({
+  characterId: z.string(),
+  itemName: z.string(),
+  itemType: z.nativeEnum(ItemType),
+  quantity: z.number().int().min(1).max(999).default(1),
+});
+
+const updateInventoryItemSchema = z.object({
+  id: z.string(),
+  quantity: z.number().int().min(0).max(999),
+});
+
+const deleteInventoryItemSchema = z.object({
+  id: z.string(),
 });
 
 const updateDamageThresholdSchema = z.object({
@@ -645,6 +666,33 @@ export const characterRouter = createTRPCRouter({
       });
     }),
 
+  updateExperienceBonus: protectedProcedure
+    .input(updateExperienceBonusSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the experience belongs to a character owned by the user
+      const experience = await ctx.db.experience.findUnique({
+        where: { id: input.experienceId },
+        include: {
+          character: {
+            select: { userId: true },
+          },
+        },
+      });
+
+      if (!experience) {
+        throw new Error("Experience not found");
+      }
+
+      if (experience.character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update experiences for your own characters");
+      }
+
+      return ctx.db.experience.update({
+        where: { id: input.experienceId },
+        data: { bonus: input.bonus },
+      });
+    }),
+
   update: protectedProcedure
     .input(updateCharacterSchema)
     .mutation(async ({ ctx, input }) => {
@@ -1166,5 +1214,146 @@ export const characterRouter = createTRPCRouter({
         availableSlotsByLevel,
         actualSlotsByLevel,
       };
+    }),
+
+  // Inventory management
+  getInventory: protectedProcedure
+    .input(z.object({ characterId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        include: {
+          inventoryItems: {
+            orderBy: [{ itemType: "asc" }, { itemName: "asc" }],
+          },
+        },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      // Allow viewing if user owns the character OR is in the same game
+      const canView =
+        character.userId === ctx.session.user.id ||
+        (character.gameId &&
+          (await ctx.db.game.findFirst({
+            where: {
+              id: character.gameId,
+              OR: [
+                { gameMasterId: ctx.session.user.id },
+                { characters: { some: { userId: ctx.session.user.id } } },
+              ],
+            },
+          })));
+
+      if (!canView) {
+        throw new Error("You don't have permission to view this character's inventory");
+      }
+
+      return character.inventoryItems;
+    }),
+
+  addInventoryItem: protectedProcedure
+    .input(addInventoryItemSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only add items to your own characters");
+      }
+
+      // Check if item already exists, if so, increase quantity
+      const existingItem = await ctx.db.inventoryItem.findFirst({
+        where: {
+          characterId: input.characterId,
+          itemName: input.itemName,
+          itemType: input.itemType,
+        },
+      });
+
+      if (existingItem) {
+        return ctx.db.inventoryItem.update({
+          where: { id: existingItem.id },
+          data: { quantity: existingItem.quantity + input.quantity },
+        });
+      } else {
+        return ctx.db.inventoryItem.create({
+          data: {
+            characterId: input.characterId,
+            itemName: input.itemName,
+            itemType: input.itemType,
+            quantity: input.quantity,
+          },
+        });
+      }
+    }),
+
+  updateInventoryItem: protectedProcedure
+    .input(updateInventoryItemSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the inventory item belongs to a character owned by the user
+      const inventoryItem = await ctx.db.inventoryItem.findUnique({
+        where: { id: input.id },
+        include: {
+          character: {
+            select: { userId: true },
+          },
+        },
+      });
+
+      if (!inventoryItem) {
+        throw new Error("Inventory item not found");
+      }
+
+      if (inventoryItem.character.userId !== ctx.session.user.id) {
+        throw new Error("You can only update inventory items for your own characters");
+      }
+
+      // If quantity is 0, delete the item
+      if (input.quantity === 0) {
+        return ctx.db.inventoryItem.delete({
+          where: { id: input.id },
+        });
+      }
+
+      return ctx.db.inventoryItem.update({
+        where: { id: input.id },
+        data: { quantity: input.quantity },
+      });
+    }),
+
+  deleteInventoryItem: protectedProcedure
+    .input(deleteInventoryItemSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the inventory item belongs to a character owned by the user
+      const inventoryItem = await ctx.db.inventoryItem.findUnique({
+        where: { id: input.id },
+        include: {
+          character: {
+            select: { userId: true },
+          },
+        },
+      });
+
+      if (!inventoryItem) {
+        throw new Error("Inventory item not found");
+      }
+
+      if (inventoryItem.character.userId !== ctx.session.user.id) {
+        throw new Error("You can only delete inventory items for your own characters");
+      }
+
+      return ctx.db.inventoryItem.delete({
+        where: { id: input.id },
+      });
     }),
 });

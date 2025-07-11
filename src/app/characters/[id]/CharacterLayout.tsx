@@ -75,6 +75,9 @@ export default function CharacterLayout({
     if (pathname.endsWith("/cards")) {
       return "cards";
     }
+    if (pathname.endsWith("/inventory")) {
+      return "inventory";
+    }
     return "details";
   };
 
