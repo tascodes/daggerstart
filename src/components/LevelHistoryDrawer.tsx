@@ -207,6 +207,30 @@ export default function LevelHistoryDrawer({
                               </div>
                             </div>
                           )}
+
+                          {/* Show new experiences gained at this level */}
+                          {historyData?.experiences && 
+                            historyData.experiences.filter(exp => exp.level === level).length > 0 && 
+                            level > 1 && (
+                            <div className="mt-3">
+                              <h4 className="text-sm font-semibold text-white">
+                                New Experiences:
+                              </h4>
+                              <div className="space-y-1">
+                                {historyData.experiences
+                                  .filter(exp => exp.level === level)
+                                  .map((exp) => (
+                                  <div
+                                    key={exp.id}
+                                    className="flex items-center gap-2 text-sm text-slate-300"
+                                  >
+                                    <Star className="h-4 w-4 text-yellow-400" />
+                                    {exp.name} +{exp.bonus}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-sm text-slate-400">
@@ -224,14 +248,16 @@ export default function LevelHistoryDrawer({
                                     )}
                                 </div>
                               </div>
-                              {historyData?.experiences &&
-                                historyData.experiences.length > 0 && (
+                              {historyData?.experiences && 
+                                historyData.experiences.filter(exp => exp.level === 1).length > 0 && (
                                   <div>
                                     <h4 className="text-sm font-semibold text-white">
                                       Starting Experiences:
                                     </h4>
                                     <div className="space-y-1">
-                                      {historyData.experiences.map((exp) => (
+                                      {historyData.experiences
+                                        .filter(exp => exp.level === 1)
+                                        .map((exp) => (
                                         <div
                                           key={exp.id}
                                           className="flex items-center gap-2 text-sm text-slate-300"

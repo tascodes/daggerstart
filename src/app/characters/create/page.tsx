@@ -64,7 +64,7 @@ const formSchema = z.object({
   subclass: z.string().min(1, "Subclass is required"),
   ancestry: z.string().min(1, "Ancestry is required"),
   community: z.string().min(1, "Community is required"),
-  experiences: z.array(z.string()).min(0).max(2),
+  experiences: z.array(z.string()).min(0).max(5),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -119,8 +119,18 @@ export default function NewCharacterPage() {
 
   const watchedClass = form.watch("class");
 
-  // Always 2 experiences for new characters
-  const experienceCount = 2;
+  // Calculate number of experiences based on character level
+  const getExperienceCount = (level: number): number => {
+    if (level === 1) return 2;
+    if (level >= 2 && level <= 4) return 3;
+    if (level >= 5 && level <= 7) return 4;
+    if (level >= 8 && level <= 10) return 5;
+    return 2; // default fallback
+  };
+
+  // Get the character's current level
+  const characterLevel = isEditMode ? existingCharacter?.level ?? 1 : 1;
+  const experienceCount = getExperienceCount(characterLevel);
 
   const createCharacter = api.character.create.useMutation({
     onSuccess: (newCharacter) => {
@@ -160,8 +170,7 @@ export default function NewCharacterPage() {
         ancestry: existingCharacter.ancestry,
         community: existingCharacter.community,
         experiences:
-          existingCharacter.experiences?.slice(0, 2).map((exp) => exp.name) ??
-          [],
+          existingCharacter.experiences?.map((exp) => exp.name) ?? [],
       });
     }
   }, [existingCharacter, isEditMode, form]);
@@ -176,7 +185,7 @@ export default function NewCharacterPage() {
         subclass: data.subclass,
         ancestry: data.ancestry,
         community: data.community,
-        level: 1,
+        level: existingCharacter?.level ?? 1,
         experiences: data.experiences.map((name, index) => ({
           id: existingCharacter?.experiences?.[index]?.id,
           name,
@@ -1117,21 +1126,51 @@ export default function NewCharacterPage() {
                         </div>
                         <div className="mb-4 rounded-lg border border-sky-600 bg-sky-900/20 p-3">
                           <p className="text-sm text-sky-400">
-                            Your character starts with {experienceCount}{" "}
-                            experiences at level 1. Additional experiences will
-                            be gained when leveling up.
+                            At level {characterLevel}, your character has{" "}
+                            {experienceCount} experiences.
+                            {characterLevel > 1 && (
+                              <span className="text-slate-300">
+                                {" "}
+                                (Started with 2 at level 1
+                                {characterLevel >= 2 &&
+                                  ", gained 1 more at level 2"}
+                                {characterLevel >= 5 &&
+                                  ", gained 1 more at level 5"}
+                                {characterLevel >= 8 &&
+                                  ", gained 1 more at level 8"}
+                                )
+                              </span>
+                            )}
                           </p>
                         </div>
-                        {Array.from({ length: experienceCount }, (_, index) => (
-                          <FormField
-                            key={`experiences-${index}`}
-                            control={form.control}
-                            name={`experiences.${index}`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-white">
-                                  Experience {index + 1}
-                                </FormLabel>
+                        {Array.from({ length: experienceCount }, (_, index) => {
+                          // Determine which level this experience was gained at
+                          const getExperienceLevel = (index: number) => {
+                            if (index < 2) return 1; // First 2 experiences from level 1
+                            if (index === 2) return 2; // 3rd experience from level 2
+                            if (index === 3) return 5; // 4th experience from level 5
+                            if (index === 4) return 8; // 5th experience from level 8
+                            return 1; // fallback
+                          };
+
+                          const experienceLevel = getExperienceLevel(index);
+                          const isNewExperience = experienceLevel > 1;
+
+                          return (
+                            <FormField
+                              key={`experiences-${index}`}
+                              control={form.control}
+                              name={`experiences.${index}`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white">
+                                    Experience {index + 1}
+                                    {isNewExperience && (
+                                      <span className="ml-2 text-sm text-yellow-400">
+                                        (gained at level {experienceLevel})
+                                      </span>
+                                    )}
+                                  </FormLabel>
                                 <FormControl>
                                   <Input
                                     placeholder="What experience defines your character?"
@@ -1156,7 +1195,8 @@ export default function NewCharacterPage() {
                               </FormItem>
                             )}
                           />
-                        ))}
+                        );
+                        })}
                         <div className="text-slate-400">
                           <b>Backgrounds like:</b> Bodyguard, Con Artist,
                           Merchant, Noble, Pirate, Scholar, Thief

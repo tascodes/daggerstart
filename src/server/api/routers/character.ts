@@ -149,9 +149,13 @@ const levelUpSchema = z.object({
       "experiences",
       "domain",
       "evasion",
+      "subclass",
+      "proficiency",
+      "multiclass",
     ]),
   ),
   newExperience: z.string().optional(),
+  multiclassClass: z.string().optional(), // For multiclass option
 });
 
 const updateTraitMarkedSchema = z.object({
@@ -462,11 +466,20 @@ export const characterRouter = createTRPCRouter({
       // Create experiences if provided
       if (input.experiences && input.experiences.length > 0) {
         await ctx.db.experience.createMany({
-          data: input.experiences.map((name) => ({
-            name,
-            characterId: character.id,
-            bonus: 2,
-          })),
+          data: input.experiences.map((name, index) => {
+            // Determine which level this experience was taken at
+            let experienceLevel = 1;
+            if (index >= 2 && input.level >= 2) experienceLevel = 2;
+            if (index >= 3 && input.level >= 5) experienceLevel = 5;
+            if (index >= 4 && input.level >= 8) experienceLevel = 8;
+            
+            return {
+              name,
+              characterId: character.id,
+              bonus: 2,
+              level: experienceLevel,
+            };
+          }),
         });
       }
 
@@ -760,12 +773,25 @@ export const characterRouter = createTRPCRouter({
         }
 
         // Update or create experiences
-        for (const exp of input.experiences) {
+        for (let i = 0; i < input.experiences.length; i++) {
+          const exp = input.experiences[i]!;
+          
+          // Determine which level this experience was taken at
+          let experienceLevel = 1;
+          if (i >= 2 && input.level >= 2) experienceLevel = 2;
+          if (i >= 3 && input.level >= 5) experienceLevel = 5;
+          if (i >= 4 && input.level >= 8) experienceLevel = 8;
+          
           if (exp.id) {
-            // Update existing
+            // Update existing (preserve level if it exists, otherwise set based on position)
+            const existingExp = existingExperiences.find(e => e.id === exp.id);
             await ctx.db.experience.update({
               where: { id: exp.id },
-              data: { name: exp.name, bonus: exp.bonus },
+              data: { 
+                name: exp.name, 
+                bonus: exp.bonus,
+                level: existingExp?.level ?? experienceLevel,
+              },
             });
           } else {
             // Create new
@@ -774,6 +800,7 @@ export const characterRouter = createTRPCRouter({
                 name: exp.name,
                 bonus: exp.bonus,
                 characterId: input.id,
+                level: experienceLevel,
               },
             });
           }
@@ -835,8 +862,23 @@ export const characterRouter = createTRPCRouter({
         throw new Error("You can only level up your own characters");
       }
 
-      // Validate choices (must be exactly 2)
-      if (input.choices.length !== 2) {
+      // Validate choices - proficiency and multiclass count as 2 choices each
+      const hasProficiency = input.choices.includes("proficiency");
+      const hasMulticlass = input.choices.includes("multiclass");
+      
+      if (hasProficiency && input.choices.length !== 1) {
+        throw new Error("Proficiency counts as 2 choices - no other selections allowed");
+      }
+      
+      if (hasMulticlass && input.choices.length !== 1) {
+        throw new Error("Multiclass counts as 2 choices - no other selections allowed");
+      }
+      
+      if (hasMulticlass && !input.multiclassClass?.trim()) {
+        throw new Error("Multiclass class must be specified");
+      }
+      
+      if (!hasProficiency && !hasMulticlass && input.choices.length !== 2) {
         throw new Error("Must select exactly 2 level-up choices");
       }
 
@@ -865,10 +907,10 @@ export const characterRouter = createTRPCRouter({
           : nextLevelToComplete
         : nextLevelToComplete;
 
-      // Validate target level - actualTargetLevel should be within the character's current level
-      if (actualTargetLevel > character.level) {
+      // Validate target level - can only level up to next level or fill missing levels
+      if (actualTargetLevel > character.level + 1) {
         throw new Error(
-          `Cannot level up to ${actualTargetLevel}. Character's level is only ${character.level}. Please update character level first.`,
+          `Cannot level up to ${actualTargetLevel}. Character's level is only ${character.level}. Maximum allowed level up is ${character.level + 1}.`,
         );
       }
 
@@ -905,6 +947,9 @@ export const characterRouter = createTRPCRouter({
         experiences: LevelChoice.EXPERIENCE_BONUS,
         domain: LevelChoice.DOMAIN_CARD,
         evasion: LevelChoice.EVASION_BONUS,
+        subclass: LevelChoice.SUBCLASS_CARD,
+        proficiency: LevelChoice.PROFICIENCY,
+        multiclass: LevelChoice.MULTICLASS,
       };
 
       // Create the character level with choices
@@ -912,6 +957,7 @@ export const characterRouter = createTRPCRouter({
         data: {
           characterId: input.characterId,
           level: actualTargetLevel,
+          multiclass: hasMulticlass ? input.multiclassClass : undefined,
           choices: {
             create: input.choices.map((choice) => ({
               choice: choiceMap[choice]!,
@@ -923,8 +969,23 @@ export const characterRouter = createTRPCRouter({
         },
       });
 
-      // Note: We don't update the character's level here since that's controlled by the create/edit page
-      // The level up process only creates the CharacterLevel entries with choices
+      // Update character level to the target level (for normal progression)
+      // and handle other level-up effects
+      const updateData: { 
+        level?: number; 
+        maxHp?: number;
+        agilityMarked?: boolean;
+        strengthMarked?: boolean;
+        finesseMarked?: boolean;
+        instinctMarked?: boolean;
+        presenceMarked?: boolean;
+        knowledgeMarked?: boolean;
+      } = {};
+      
+      // Only increase level if this is normal progression (not filling in missing levels)
+      if (actualTargetLevel > character.level) {
+        updateData.level = actualTargetLevel;
+      }
 
       // Check if hit points choice was selected and recalculate maxHp
       if (input.choices.includes("hitpoints")) {
@@ -933,25 +994,24 @@ export const characterRouter = createTRPCRouter({
           input.characterId,
           character.class,
         );
-        // Update max HP if hit points were chosen
-        await ctx.db.character.update({
-          where: { id: input.characterId },
-          data: { maxHp: newMaxHp },
-        });
+        updateData.maxHp = newMaxHp;
       }
 
-      // Prepare trait update data only if leveling to 5 or 8
+      // Reset trait marks when leveling to 5 or 8
       if (actualTargetLevel === 5 || actualTargetLevel === 8) {
+        updateData.agilityMarked = false;
+        updateData.strengthMarked = false;
+        updateData.finesseMarked = false;
+        updateData.instinctMarked = false;
+        updateData.presenceMarked = false;
+        updateData.knowledgeMarked = false;
+      }
+
+      // Update character if there are changes to make
+      if (Object.keys(updateData).length > 0) {
         await ctx.db.character.update({
           where: { id: input.characterId },
-          data: {
-            agilityMarked: false,
-            strengthMarked: false,
-            finesseMarked: false,
-            instinctMarked: false,
-            presenceMarked: false,
-            knowledgeMarked: false,
-          },
+          data: updateData,
         });
       }
 
@@ -962,6 +1022,7 @@ export const characterRouter = createTRPCRouter({
             name: input.newExperience.trim(),
             bonus: 2,
             characterId: input.characterId,
+            level: actualTargetLevel,
           },
         });
       }
@@ -1114,7 +1175,7 @@ export const characterRouter = createTRPCRouter({
 
       const experiences = await ctx.db.experience.findMany({
         where: { characterId: input.id },
-        orderBy: { createdAt: "asc" },
+        orderBy: [{ level: "asc" }, { createdAt: "asc" }],
       });
 
       return {

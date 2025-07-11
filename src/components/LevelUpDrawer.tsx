@@ -14,6 +14,14 @@ import { Input } from "~/components/ui/input";
 import { TrendingUp, CheckCircle2, Plus, Minus, Star } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { classes } from "~/lib/srd/classes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface LevelUpOption {
   id: string;
@@ -39,6 +47,7 @@ export default function LevelUpDrawer({
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [newExperience, setNewExperience] = useState("");
+  const [multiclassClass, setMulticlassClass] = useState("");
 
   // Fetch character level history to count previous choices
   const { data: historyData } = api.character.getLevelHistory.useQuery(
@@ -66,6 +75,7 @@ export default function LevelUpDrawer({
       setOpen(false);
       setSelectedOptions([]);
       setNewExperience("");
+      setMulticlassClass("");
     },
     onError: (error) => {
       console.error("Level up failed:", error);
@@ -83,6 +93,9 @@ export default function LevelUpDrawer({
       experiences: "EXPERIENCE_BONUS",
       domain: "DOMAIN_CARD",
       evasion: "EVASION_BONUS",
+      subclass: "SUBCLASS_CARD",
+      proficiency: "PROFICIENCY",
+      multiclass: "MULTICLASS",
     };
 
     const dbChoiceType = choiceMap[choiceId];
@@ -157,10 +170,65 @@ export default function LevelUpDrawer({
     },
   ];
 
+  // Additional options for levels 5-10
+  const advancedLevelUpOptions: Omit<LevelUpOption, "currentSelections">[] = [
+    {
+      id: "subclass",
+      name: "Upgraded Subclass Card",
+      description: "Take an upgraded subclass card.",
+      maxSelections: 1,
+    },
+    {
+      id: "proficiency",
+      name: "Proficiency Increase",
+      description: "Increase your Proficiency by +1. (Counts as 2 choices)",
+      maxSelections: 1,
+    },
+    {
+      id: "multiclass",
+      name: "Multiclass",
+      description: "Choose an additional class for your character. (Counts as 2 choices)",
+      maxSelections: 1,
+    },
+  ];
+
+  // Use the next level that needs to be completed, or fall back to next level
+  // If there are incomplete levels, always use nextLevelToComplete
+  // If no incomplete levels, then level up normally to next level
+  const targetLevel = levelData?.hasIncompletelevels
+    ? levelData.nextLevelToComplete!
+    : currentLevel + 1;
+
+  // Get level tier-specific history for advanced options
+  const getTierSpecificHistory = () => {
+    if (!historyData?.levels) return { hasSubclass: false, hasMulticlass: false };
+    
+    const tierStart = targetLevel >= 8 ? 8 : targetLevel >= 5 ? 5 : 2;
+    const tierLevels = historyData.levels.filter(level => level.level >= tierStart && level.level < targetLevel);
+    
+    const hasSubclass = tierLevels.some(level => 
+      level.choices.some(choice => choice.choice === "SUBCLASS_CARD")
+    );
+    const hasMulticlass = historyData.levels.some(level => 
+      level.choices.some(choice => choice.choice === "MULTICLASS")
+    );
+    
+    return { hasSubclass, hasMulticlass };
+  };
+
+  const { hasSubclass, hasMulticlass } = getTierSpecificHistory();
+
+  // Combine base and advanced options for levels 5-10
+  const allOptions = targetLevel >= 5 
+    ? [...baseLevelUpOptions, ...advancedLevelUpOptions]
+    : baseLevelUpOptions;
+
   // Build level up options with current selections from previous levels
-  const levelUpOptions: LevelUpOption[] = baseLevelUpOptions.map((option) => ({
+  const levelUpOptions: LevelUpOption[] = allOptions.map((option) => ({
     ...option,
-    currentSelections: getPreviousChoiceCount(option.id),
+    currentSelections: option.id === "subclass" || option.id === "proficiency" || option.id === "multiclass" 
+      ? 0 // These are tier/forever restricted, not count-based
+      : getPreviousChoiceCount(option.id),
   }));
 
   // Count how many times each option has been selected
@@ -178,14 +246,31 @@ export default function LevelUpDrawer({
 
     if (!option) return;
 
+    // Special handling for proficiency and multiclass (count as 2 choices each)
+    if (optionId === "proficiency" || optionId === "multiclass") {
+      if (selectedOptions.length === 0) {
+        setSelectedOptions([optionId]);
+      }
+      return;
+    }
+
     const totalPreviousSelections = option.currentSelections;
     const totalCurrentAndPreviousSelections =
       totalPreviousSelections + currentCount;
 
+    // Check if we can add this option
+    const maxSelections = 2;
+    const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
+    
+    if (hasProficiencyOrMulticlass) {
+      // Can't add any more options if proficiency or multiclass is selected
+      return;
+    }
+
     // If we can still select more of this option (considering previous levels) and have room for selections
     if (
       totalCurrentAndPreviousSelections < option.maxSelections &&
-      selectedOptions.length < 2
+      selectedOptions.length < maxSelections
     ) {
       setSelectedOptions([...selectedOptions, optionId]);
     }
@@ -209,6 +294,29 @@ export default function LevelUpDrawer({
     const option = levelUpOptions.find((opt) => opt.id === optionId);
     if (!option) return true;
 
+    // Advanced option rules for levels 5-10
+    if (targetLevel >= 5) {
+      // If multiclass was selected in any previous level, it can never be selected again
+      if (optionId === "multiclass" && hasMulticlass) return true;
+      
+      // If subclass was selected in this tier, multiclass is disabled until next tier
+      if (optionId === "multiclass" && hasSubclass) return true;
+      
+      // If multiclass was selected in this tier, subclass is disabled until next tier
+      if (optionId === "subclass" && hasMulticlass) return true;
+      
+      // Disable proficiency and multiclass if any other option is already selected
+      if ((optionId === "proficiency" || optionId === "multiclass") && selectedOptions.length > 0 && !selectedOptions.includes(optionId)) {
+        return true;
+      }
+      
+      // Disable all other options if proficiency or multiclass is selected
+      if (optionId !== "proficiency" && optionId !== "multiclass") {
+        const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
+        if (hasProficiencyOrMulticlass) return true;
+      }
+    }
+
     const currentCount = optionCounts[optionId] ?? 0;
     const totalPreviousSelections = option.currentSelections;
     const totalCurrentAndPreviousSelections =
@@ -217,27 +325,36 @@ export default function LevelUpDrawer({
     // Disable if we've reached the max selections for this option (including previous levels)
     if (totalCurrentAndPreviousSelections >= option.maxSelections) return true;
 
-    // Disable if we already have 2 total selections for this level-up
-    if (selectedOptions.length >= 2) return true;
+    // For proficiency and multiclass, they can only be selected once and count as 2 choices
+    if ((optionId === "proficiency" || optionId === "multiclass") && currentCount > 0) return true;
+
+    // Disable if we already have 2 total selections for this level-up (unless it's proficiency/multiclass)
+    if (selectedOptions.length >= 2 && !selectedOptions.includes(optionId)) return true;
 
     return false;
   };
 
-  // Use the next level that needs to be completed, or fall back to next level
-  // If there are incomplete levels, always use nextLevelToComplete
-  // If no incomplete levels, then level up normally to next level
-  const targetLevel = levelData?.hasIncompletelevels
-    ? levelData.nextLevelToComplete!
-    : currentLevel + 1;
   const requiresNewExperience =
     targetLevel === 2 || targetLevel === 5 || targetLevel === 8;
 
   const handleConfirmLevelUp = () => {
-    if (selectedOptions.length !== 2) {
+    const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
+    const hasMulticlassSelection = selectedOptions.includes("multiclass");
+    
+    // Validation: either 2 normal choices, or 1 special choice (proficiency/multiclass)
+    if (!hasProficiencyOrMulticlass && selectedOptions.length !== 2) {
+      return;
+    }
+    
+    if (hasProficiencyOrMulticlass && selectedOptions.length !== 1) {
       return;
     }
 
     if (requiresNewExperience && !newExperience.trim()) {
+      return;
+    }
+    
+    if (hasMulticlassSelection && !multiclassClass.trim()) {
       return;
     }
 
@@ -251,8 +368,12 @@ export default function LevelUpDrawer({
         | "experiences"
         | "domain"
         | "evasion"
+        | "subclass"
+        | "proficiency"
+        | "multiclass"
       )[],
       newExperience: requiresNewExperience ? newExperience.trim() : undefined,
+      multiclassClass: hasMulticlassSelection ? multiclassClass.trim() : undefined,
     });
   };
 
@@ -291,7 +412,8 @@ export default function LevelUpDrawer({
               multiple times.
             </p>
             <p className="mt-2 text-sm font-medium text-sky-400">
-              Selections: {selectedOptions.length}/2
+              Selections: {selectedOptions.length}/
+              {selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass") ? "1 (special)" : "2"}
             </p>
           </div>
 
@@ -335,6 +457,34 @@ export default function LevelUpDrawer({
             </div>
           )}
 
+          {/* Multiclass selection */}
+          {selectedOptions.includes("multiclass") && (
+            <div className="mb-4 rounded-lg border border-purple-600 bg-purple-900/20 p-4">
+              <h4 className="mb-2 text-sm font-semibold text-purple-400">
+                Multiclass Selection Required
+              </h4>
+              <p className="mb-3 text-sm text-slate-300">
+                Choose an additional class for your character:
+              </p>
+              <Select value={multiclassClass} onValueChange={setMulticlassClass}>
+                <SelectTrigger className="border-slate-600 bg-slate-700 text-white">
+                  <SelectValue placeholder="Select a class to multiclass into" />
+                </SelectTrigger>
+                <SelectContent className="border-slate-600 bg-slate-700">
+                  {classes.map((classItem) => (
+                    <SelectItem
+                      key={classItem.name}
+                      value={classItem.name.toLowerCase()}
+                      className="text-white focus:bg-slate-600"
+                    >
+                      {classItem.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="flex-1 space-y-3 overflow-y-auto">
             {levelUpOptions.map((option) => {
               const currentCount = optionCounts[option.id] ?? 0;
@@ -368,6 +518,17 @@ export default function LevelUpDrawer({
                               (Already selected)
                             </span>
                           )}
+                        {/* Special indicators for advanced options */}
+                        {option.id === "subclass" && hasSubclass && (
+                          <span className="ml-2 text-sm text-orange-400">
+                            (Taken this tier)
+                          </span>
+                        )}
+                        {option.id === "multiclass" && hasMulticlass && (
+                          <span className="ml-2 text-sm text-red-400">
+                            (Already multiclassed)
+                          </span>
+                        )}
                       </h4>
                       <p className="mt-1 text-sm text-slate-300">
                         {option.description}
@@ -421,9 +582,12 @@ export default function LevelUpDrawer({
             <Button
               onClick={handleConfirmLevelUp}
               disabled={
-                selectedOptions.length !== 2 ||
                 levelUpMutation.isPending ||
-                (requiresNewExperience && !newExperience.trim())
+                (requiresNewExperience && !newExperience.trim()) ||
+                (selectedOptions.includes("multiclass") && !multiclassClass.trim()) ||
+                (selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass") 
+                  ? selectedOptions.length !== 1 
+                  : selectedOptions.length !== 2)
               }
               className="flex-1 bg-sky-500 text-white hover:bg-sky-600 disabled:bg-slate-700 disabled:text-slate-400"
             >
@@ -436,6 +600,7 @@ export default function LevelUpDrawer({
                 setOpen(false);
                 setSelectedOptions([]);
                 setNewExperience("");
+                setMulticlassClass("");
               }}
               variant="outline"
               className="border-slate-600 bg-slate-700 text-white hover:bg-slate-600"

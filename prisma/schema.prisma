@@ -294,6 +294,7 @@ model Experience {
     id          String    @id @default(cuid())
     name        String
     bonus       Int       @default(2)
+    level       Int       @default(1) // Track which level this experience was taken at
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
 
@@ -301,6 +302,7 @@ model Experience {
     characterId String
 
     @@index([characterId])
+    @@index([level])
 }
 
 enum ItemType {
