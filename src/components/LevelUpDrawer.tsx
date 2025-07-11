@@ -215,7 +215,8 @@ export default function LevelUpDrawer({
   };
 
   const nextLevel = currentLevel + 1;
-  const requiresNewExperience = nextLevel === 2 || nextLevel === 5 || nextLevel === 8;
+  const requiresNewExperience =
+    nextLevel === 2 || nextLevel === 5 || nextLevel === 8;
 
   const handleConfirmLevelUp = () => {
     if (selectedOptions.length !== 2) {
@@ -301,7 +302,8 @@ export default function LevelUpDrawer({
                 New Experience Required
               </h4>
               <p className="mb-3 text-sm text-slate-300">
-                Enter the name of your new experience (you&apos;ll gain a +2 bonus with it):
+                Enter the name of your new experience (you&apos;ll gain a +2
+                bonus with it):
               </p>
               <Input
                 value={newExperience}
@@ -399,7 +401,7 @@ export default function LevelUpDrawer({
             <Button
               onClick={handleConfirmLevelUp}
               disabled={
-                selectedOptions.length !== 2 || 
+                selectedOptions.length !== 2 ||
                 levelUpMutation.isPending ||
                 (requiresNewExperience && !newExperience.trim())
               }

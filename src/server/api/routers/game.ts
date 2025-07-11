@@ -789,7 +789,10 @@ export const gameRouter = createTRPCRouter({
         const diceRoller = new DiceRoller();
         const rollResult = diceRoller.roll(input.diceExpression) as any;
 
-        console.log('Dice roll result structure:', JSON.stringify(rollResult, null, 2));
+        console.log(
+          "Dice roll result structure:",
+          JSON.stringify(rollResult, null, 2),
+        );
 
         // Extract results
         const total = rollResult.total as number;
@@ -818,7 +821,10 @@ export const gameRouter = createTRPCRouter({
           const matches = rollResult.output.match(/\[([^\]]+)\]/);
           if (matches) {
             const rollsString = matches[1];
-            const rolls = rollsString.split(',').map((r: string) => parseInt(r.trim())).filter((n: number) => !isNaN(n));
+            const rolls = rollsString
+              .split(",")
+              .map((r: string) => parseInt(r.trim()))
+              .filter((n: number) => !isNaN(n));
             individualResults.push(...rolls);
           }
         }
@@ -861,8 +867,8 @@ export const gameRouter = createTRPCRouter({
 
         return diceRoll;
       } catch (error) {
-        console.error('Dice rolling error:', error);
-        console.error('Dice expression:', input.diceExpression);
+        console.error("Dice rolling error:", error);
+        console.error("Dice expression:", input.diceExpression);
         throw new Error(
           `Invalid dice expression "${input.diceExpression}": ${error instanceof Error ? error.message : "Unknown error"}`,
         );

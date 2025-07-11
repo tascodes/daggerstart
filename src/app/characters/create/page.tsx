@@ -1082,13 +1082,19 @@ export default function NewCharacterPage() {
                         </div>
                         <div className="mb-4 rounded-lg border border-sky-600 bg-sky-900/20 p-3">
                           <p className="text-sm text-sky-400">
-                            At level {watchedLevel || 1}, your character has {experienceCount} experiences.
+                            At level {watchedLevel || 1}, your character has{" "}
+                            {experienceCount} experiences.
                             {watchedLevel && watchedLevel > 1 && (
                               <span className="text-slate-300">
-                                {" "}(Started with 2 at level 1
-                                {watchedLevel >= 2 && ", gained 1 more at level 2"}
-                                {watchedLevel >= 5 && ", gained 1 more at level 5"}
-                                {watchedLevel >= 8 && ", gained 1 more at level 8"})
+                                {" "}
+                                (Started with 2 at level 1
+                                {watchedLevel >= 2 &&
+                                  ", gained 1 more at level 2"}
+                                {watchedLevel >= 5 &&
+                                  ", gained 1 more at level 5"}
+                                {watchedLevel >= 8 &&
+                                  ", gained 1 more at level 8"}
+                                )
                               </span>
                             )}
                           </p>

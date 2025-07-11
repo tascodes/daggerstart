@@ -28,15 +28,17 @@ export default function CharacterExperiences({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<number>(0);
 
-  const updateExperienceBonus = api.character.updateExperienceBonus.useMutation({
-    onSuccess: () => {
-      setEditingId(null);
-      onUpdate?.();
+  const updateExperienceBonus = api.character.updateExperienceBonus.useMutation(
+    {
+      onSuccess: () => {
+        setEditingId(null);
+        onUpdate?.();
+      },
+      onError: (error) => {
+        console.error("Failed to update experience bonus:", error);
+      },
     },
-    onError: (error) => {
-      console.error("Failed to update experience bonus:", error);
-    },
-  });
+  );
 
   const handleEdit = (experience: Experience) => {
     setEditingId(experience.id);
@@ -94,10 +96,12 @@ export default function CharacterExperiences({
                         <Input
                           type="number"
                           value={editValue}
-                          onChange={(e) => setEditValue(parseInt(e.target.value) || 0)}
+                          onChange={(e) =>
+                            setEditValue(parseInt(e.target.value) || 0)
+                          }
                           min={0}
                           max={10}
-                          className="w-16 h-8 border-slate-500 bg-slate-600 text-white text-center"
+                          className="h-8 w-16 border-slate-500 bg-slate-600 text-center text-white"
                         />
                       </div>
                     ) : (
@@ -114,7 +118,7 @@ export default function CharacterExperiences({
                             onClick={handleSave}
                             disabled={updateExperienceBonus.isPending}
                             size="sm"
-                            className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700"
+                            className="h-8 w-8 bg-green-600 p-0 hover:bg-green-700"
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -123,7 +127,7 @@ export default function CharacterExperiences({
                             disabled={updateExperienceBonus.isPending}
                             size="sm"
                             variant="outline"
-                            className="h-8 w-8 p-0 border-slate-500 bg-slate-600 hover:bg-slate-500"
+                            className="h-8 w-8 border-slate-500 bg-slate-600 p-0 hover:bg-slate-500"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -133,7 +137,7 @@ export default function CharacterExperiences({
                           onClick={() => handleEdit(experience)}
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 text-slate-400 hover:text-white hover:bg-slate-600"
+                          className="h-8 w-8 p-0 text-slate-400 hover:bg-slate-600 hover:text-white"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>

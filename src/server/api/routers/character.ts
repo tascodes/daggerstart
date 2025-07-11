@@ -426,9 +426,11 @@ export const characterRouter = createTRPCRouter({
 
       const expectedCount = getExpectedExperienceCount(input.level);
       const actualCount = input.experiences?.length ?? 0;
-      
+
       if (actualCount !== expectedCount) {
-        throw new Error(`Character at level ${input.level} must have exactly ${expectedCount} experiences, but got ${actualCount}`);
+        throw new Error(
+          `Character at level ${input.level} must have exactly ${expectedCount} experiences, but got ${actualCount}`,
+        );
       }
 
       // Find the class data to get HP and evasion values
@@ -684,7 +686,9 @@ export const characterRouter = createTRPCRouter({
       }
 
       if (experience.character.userId !== ctx.session.user.id) {
-        throw new Error("You can only update experiences for your own characters");
+        throw new Error(
+          "You can only update experiences for your own characters",
+        );
       }
 
       return ctx.db.experience.update({
@@ -826,9 +830,12 @@ export const characterRouter = createTRPCRouter({
       const newLevel = character.level + 1;
 
       // Check if new experience is required for this level
-      const requiresNewExperience = newLevel === 2 || newLevel === 5 || newLevel === 8;
+      const requiresNewExperience =
+        newLevel === 2 || newLevel === 5 || newLevel === 8;
       if (requiresNewExperience && !input.newExperience?.trim()) {
-        throw new Error(`A new experience is required when leveling up to level ${newLevel}`);
+        throw new Error(
+          `A new experience is required when leveling up to level ${newLevel}`,
+        );
       }
 
       // Check if character level already exists
@@ -1248,7 +1255,9 @@ export const characterRouter = createTRPCRouter({
           })));
 
       if (!canView) {
-        throw new Error("You don't have permission to view this character's inventory");
+        throw new Error(
+          "You don't have permission to view this character's inventory",
+        );
       }
 
       return character.inventoryItems;
@@ -1315,7 +1324,9 @@ export const characterRouter = createTRPCRouter({
       }
 
       if (inventoryItem.character.userId !== ctx.session.user.id) {
-        throw new Error("You can only update inventory items for your own characters");
+        throw new Error(
+          "You can only update inventory items for your own characters",
+        );
       }
 
       // If quantity is 0, delete the item
@@ -1349,7 +1360,9 @@ export const characterRouter = createTRPCRouter({
       }
 
       if (inventoryItem.character.userId !== ctx.session.user.id) {
-        throw new Error("You can only delete inventory items for your own characters");
+        throw new Error(
+          "You can only delete inventory items for your own characters",
+        );
       }
 
       return ctx.db.inventoryItem.delete({

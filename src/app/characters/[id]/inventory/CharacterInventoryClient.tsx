@@ -6,7 +6,17 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Plus, Search, Package, Shield, Sword, Zap, Edit2, Trash2, Minus } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Package,
+  Shield,
+  Sword,
+  Zap,
+  Edit2,
+  Trash2,
+  Minus,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { type ItemType } from "@prisma/client";
 import AddItemModal from "./AddItemModal";
@@ -55,48 +65,66 @@ export default function CharacterInventoryClient({
   const isOwner = character?.user.id === session?.user.id;
 
   // Get item details from SRD
-  const getItemDetails = (itemName: string, itemType: ItemType): Item | Armor | Weapon | Consumable | null => {
+  const getItemDetails = (
+    itemName: string,
+    itemType: ItemType,
+  ): Item | Armor | Weapon | Consumable | null => {
     switch (itemType) {
       case "ITEM":
-        return Items.find(item => item.name === itemName) ?? null;
+        return Items.find((item) => item.name === itemName) ?? null;
       case "ARMOR":
-        return Armors.find(armor => armor.name === itemName) ?? null;
+        return Armors.find((armor) => armor.name === itemName) ?? null;
       case "WEAPON":
-        return Weapons.find(weapon => weapon.name === itemName) ?? null;
+        return Weapons.find((weapon) => weapon.name === itemName) ?? null;
       case "CONSUMABLE":
-        return Consumables.find(consumable => consumable.name === itemName) ?? null;
+        return (
+          Consumables.find((consumable) => consumable.name === itemName) ?? null
+        );
       default:
         return null;
     }
   };
 
   // Filter inventory based on search and type
-  const filteredInventory = inventory?.filter((item) => {
-    const matchesSearch = item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "ALL" || item.itemType === filterType;
-    return matchesSearch && matchesType;
-  }) ?? [];
+  const filteredInventory =
+    inventory?.filter((item) => {
+      const matchesSearch = item.itemName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesType = filterType === "ALL" || item.itemType === filterType;
+      return matchesSearch && matchesType;
+    }) ?? [];
 
   // Group items by type and apply sorting
   const groupedInventory = {
-    ITEM: filteredInventory.filter(item => item.itemType === "ITEM").sort((a, b) => a.itemName.localeCompare(b.itemName)),
-    ARMOR: filteredInventory.filter(item => item.itemType === "ARMOR").sort((a, b) => {
-      const aDetails = getItemDetails(a.itemName, a.itemType) as Armor;
-      const bDetails = getItemDetails(b.itemName, b.itemType) as Armor;
-      if (aDetails && bDetails) {
-        if (aDetails.tier !== bDetails.tier) return aDetails.tier - bDetails.tier;
-      }
-      return a.itemName.localeCompare(b.itemName);
-    }),
-    WEAPON: filteredInventory.filter(item => item.itemType === "WEAPON").sort((a, b) => {
-      const aDetails = getItemDetails(a.itemName, a.itemType) as Weapon;
-      const bDetails = getItemDetails(b.itemName, b.itemType) as Weapon;
-      if (aDetails && bDetails) {
-        if (aDetails.tier !== bDetails.tier) return aDetails.tier - bDetails.tier;
-      }
-      return a.itemName.localeCompare(b.itemName);
-    }),
-    CONSUMABLE: filteredInventory.filter(item => item.itemType === "CONSUMABLE").sort((a, b) => a.itemName.localeCompare(b.itemName)),
+    ITEM: filteredInventory
+      .filter((item) => item.itemType === "ITEM")
+      .sort((a, b) => a.itemName.localeCompare(b.itemName)),
+    ARMOR: filteredInventory
+      .filter((item) => item.itemType === "ARMOR")
+      .sort((a, b) => {
+        const aDetails = getItemDetails(a.itemName, a.itemType) as Armor;
+        const bDetails = getItemDetails(b.itemName, b.itemType) as Armor;
+        if (aDetails && bDetails) {
+          if (aDetails.tier !== bDetails.tier)
+            return aDetails.tier - bDetails.tier;
+        }
+        return a.itemName.localeCompare(b.itemName);
+      }),
+    WEAPON: filteredInventory
+      .filter((item) => item.itemType === "WEAPON")
+      .sort((a, b) => {
+        const aDetails = getItemDetails(a.itemName, a.itemType) as Weapon;
+        const bDetails = getItemDetails(b.itemName, b.itemType) as Weapon;
+        if (aDetails && bDetails) {
+          if (aDetails.tier !== bDetails.tier)
+            return aDetails.tier - bDetails.tier;
+        }
+        return a.itemName.localeCompare(b.itemName);
+      }),
+    CONSUMABLE: filteredInventory
+      .filter((item) => item.itemType === "CONSUMABLE")
+      .sort((a, b) => a.itemName.localeCompare(b.itemName)),
   };
 
   const getTypeIcon = (type: ItemType) => {
@@ -162,7 +190,9 @@ export default function CharacterInventoryClient({
         const itemOrConsumable = details as Item | Consumable;
         return (
           <div className="mt-2">
-            <p className="text-sm text-slate-300">{itemOrConsumable.description}</p>
+            <p className="text-sm text-slate-300">
+              {itemOrConsumable.description}
+            </p>
           </div>
         );
       case "ARMOR":
@@ -185,7 +215,9 @@ export default function CharacterInventoryClient({
             </div>
             {armor.feat_name && (
               <div className="rounded-lg bg-slate-700 p-3">
-                <div className="text-sm font-semibold text-yellow-400">{armor.feat_name}</div>
+                <div className="text-sm font-semibold text-yellow-400">
+                  {armor.feat_name}
+                </div>
                 <div className="text-sm text-slate-300">{armor.feat_text}</div>
               </div>
             )}
@@ -198,7 +230,9 @@ export default function CharacterInventoryClient({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-slate-400">Type:</span>
-                <span className="ml-2 text-white">{weapon.primary_or_secondary}</span>
+                <span className="ml-2 text-white">
+                  {weapon.primary_or_secondary}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400">Tier:</span>
@@ -214,7 +248,9 @@ export default function CharacterInventoryClient({
               </div>
               <div>
                 <span className="text-slate-400">Damage:</span>
-                <span className="ml-2 text-white">{weapon.damage.replace(/\s*(phy|mag)$/i, '')}</span>
+                <span className="ml-2 text-white">
+                  {weapon.damage.replace(/\s*(phy|mag)$/i, "")}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400">Burden:</span>
@@ -223,11 +259,15 @@ export default function CharacterInventoryClient({
             </div>
             <div>
               <span className="text-slate-400">Type:</span>
-              <span className="ml-2 text-white">{weapon.physical_or_magical}</span>
+              <span className="ml-2 text-white">
+                {weapon.physical_or_magical}
+              </span>
             </div>
             {weapon.feat_name && (
               <div className="rounded-lg bg-slate-700 p-3">
-                <div className="text-sm font-semibold text-yellow-400">{weapon.feat_name}</div>
+                <div className="text-sm font-semibold text-yellow-400">
+                  {weapon.feat_name}
+                </div>
                 <div className="text-sm text-slate-300">{weapon.feat_text}</div>
               </div>
             )}
@@ -261,12 +301,12 @@ export default function CharacterInventoryClient({
       {/* Search and Filter */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search items..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 border-slate-600 bg-slate-700 text-white placeholder:text-slate-400"
+            className="border-slate-600 bg-slate-700 pl-10 text-white placeholder:text-slate-400"
           />
         </div>
         <div className="flex gap-2">
@@ -299,7 +339,10 @@ export default function CharacterInventoryClient({
                 <h2 className="text-lg font-semibold text-white">
                   {getTypeName(type as ItemType)}
                 </h2>
-                <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+                <Badge
+                  variant="secondary"
+                  className="bg-slate-700 text-slate-300"
+                >
                   {items.length}
                 </Badge>
               </div>
@@ -317,26 +360,38 @@ export default function CharacterInventoryClient({
                             {editingQuantity === item.id ? (
                               <div className="flex items-center gap-1">
                                 <Button
-                                  onClick={() => setTempQuantity(Math.max(0, tempQuantity - 1))}
+                                  onClick={() =>
+                                    setTempQuantity(
+                                      Math.max(0, tempQuantity - 1),
+                                    )
+                                  }
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 w-6 p-0 border-slate-500 bg-slate-600 hover:bg-slate-500"
+                                  className="h-6 w-6 border-slate-500 bg-slate-600 p-0 hover:bg-slate-500"
                                 >
                                   <Minus className="h-3 w-3" />
                                 </Button>
                                 <Input
                                   type="number"
                                   value={tempQuantity}
-                                  onChange={(e) => setTempQuantity(parseInt(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    setTempQuantity(
+                                      parseInt(e.target.value) || 0,
+                                    )
+                                  }
                                   min={0}
                                   max={999}
-                                  className="w-16 h-6 text-center border-slate-500 bg-slate-600 text-white"
+                                  className="h-6 w-16 border-slate-500 bg-slate-600 text-center text-white"
                                 />
                                 <Button
-                                  onClick={() => setTempQuantity(Math.min(999, tempQuantity + 1))}
+                                  onClick={() =>
+                                    setTempQuantity(
+                                      Math.min(999, tempQuantity + 1),
+                                    )
+                                  }
                                   size="sm"
                                   variant="outline"
-                                  className="h-6 w-6 p-0 border-slate-500 bg-slate-600 hover:bg-slate-500"
+                                  className="h-6 w-6 border-slate-500 bg-slate-600 p-0 hover:bg-slate-500"
                                 >
                                   <Plus className="h-3 w-3" />
                                 </Button>
@@ -355,7 +410,7 @@ export default function CharacterInventoryClient({
                                     onClick={() => handleQuantitySave(item.id)}
                                     disabled={updateQuantityMutation.isPending}
                                     size="sm"
-                                    className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
+                                    className="h-6 w-6 bg-green-600 p-0 hover:bg-green-700"
                                   >
                                     <Edit2 className="h-3 w-3" />
                                   </Button>
@@ -364,7 +419,7 @@ export default function CharacterInventoryClient({
                                     disabled={updateQuantityMutation.isPending}
                                     size="sm"
                                     variant="outline"
-                                    className="h-6 w-6 p-0 border-slate-500 bg-slate-600 hover:bg-slate-500"
+                                    className="h-6 w-6 border-slate-500 bg-slate-600 p-0 hover:bg-slate-500"
                                   >
                                     ×
                                   </Button>
@@ -372,10 +427,12 @@ export default function CharacterInventoryClient({
                               ) : (
                                 <>
                                   <Button
-                                    onClick={() => handleQuantityEdit(item.id, item.quantity)}
+                                    onClick={() =>
+                                      handleQuantityEdit(item.id, item.quantity)
+                                    }
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 text-slate-400 hover:text-white hover:bg-slate-600"
+                                    className="h-6 w-6 p-0 text-slate-400 hover:bg-slate-600 hover:text-white"
                                   >
                                     <Edit2 className="h-3 w-3" />
                                   </Button>
@@ -383,7 +440,7 @@ export default function CharacterInventoryClient({
                                     onClick={() => handleDeleteItem(item.id)}
                                     size="sm"
                                     variant="ghost"
-                                    className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                    className="h-6 w-6 p-0 text-red-400 hover:bg-red-900/20 hover:text-red-300"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
@@ -408,13 +465,15 @@ export default function CharacterInventoryClient({
       {filteredInventory.length === 0 && (
         <div className="py-12 text-center">
           <Package className="mx-auto h-12 w-12 text-slate-400" />
-          <h3 className="mt-2 text-lg font-semibold text-white">No items found</h3>
+          <h3 className="mt-2 text-lg font-semibold text-white">
+            No items found
+          </h3>
           <p className="mt-1 text-slate-400">
             {searchTerm || filterType !== "ALL"
               ? "Try adjusting your search or filters."
               : isOwner
-              ? "Add some items to get started!"
-              : "This character doesn't have any items yet."}
+                ? "Add some items to get started!"
+                : "This character doesn't have any items yet."}
           </p>
         </div>
       )}
