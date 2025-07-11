@@ -472,7 +472,7 @@ export const characterRouter = createTRPCRouter({
             if (index >= 2 && input.level >= 2) experienceLevel = 2;
             if (index >= 3 && input.level >= 5) experienceLevel = 5;
             if (index >= 4 && input.level >= 8) experienceLevel = 8;
-            
+
             return {
               name,
               characterId: character.id,
@@ -775,20 +775,22 @@ export const characterRouter = createTRPCRouter({
         // Update or create experiences
         for (let i = 0; i < input.experiences.length; i++) {
           const exp = input.experiences[i]!;
-          
+
           // Determine which level this experience was taken at
           let experienceLevel = 1;
           if (i >= 2 && input.level >= 2) experienceLevel = 2;
           if (i >= 3 && input.level >= 5) experienceLevel = 5;
           if (i >= 4 && input.level >= 8) experienceLevel = 8;
-          
+
           if (exp.id) {
             // Update existing (preserve level if it exists, otherwise set based on position)
-            const existingExp = existingExperiences.find(e => e.id === exp.id);
+            const existingExp = existingExperiences.find(
+              (e) => e.id === exp.id,
+            );
             await ctx.db.experience.update({
               where: { id: exp.id },
-              data: { 
-                name: exp.name, 
+              data: {
+                name: exp.name,
                 bonus: exp.bonus,
                 level: existingExp?.level ?? experienceLevel,
               },
@@ -865,19 +867,23 @@ export const characterRouter = createTRPCRouter({
       // Validate choices - proficiency and multiclass count as 2 choices each
       const hasProficiency = input.choices.includes("proficiency");
       const hasMulticlass = input.choices.includes("multiclass");
-      
+
       if (hasProficiency && input.choices.length !== 1) {
-        throw new Error("Proficiency counts as 2 choices - no other selections allowed");
+        throw new Error(
+          "Proficiency counts as 2 choices - no other selections allowed",
+        );
       }
-      
+
       if (hasMulticlass && input.choices.length !== 1) {
-        throw new Error("Multiclass counts as 2 choices - no other selections allowed");
+        throw new Error(
+          "Multiclass counts as 2 choices - no other selections allowed",
+        );
       }
-      
+
       if (hasMulticlass && !input.multiclassClass?.trim()) {
         throw new Error("Multiclass class must be specified");
       }
-      
+
       if (!hasProficiency && !hasMulticlass && input.choices.length !== 2) {
         throw new Error("Must select exactly 2 level-up choices");
       }
@@ -971,8 +977,8 @@ export const characterRouter = createTRPCRouter({
 
       // Update character level to the target level (for normal progression)
       // and handle other level-up effects
-      const updateData: { 
-        level?: number; 
+      const updateData: {
+        level?: number;
         maxHp?: number;
         agilityMarked?: boolean;
         strengthMarked?: boolean;
@@ -981,7 +987,7 @@ export const characterRouter = createTRPCRouter({
         presenceMarked?: boolean;
         knowledgeMarked?: boolean;
       } = {};
-      
+
       // Only increase level if this is normal progression (not filling in missing levels)
       if (actualTargetLevel > character.level) {
         updateData.level = actualTargetLevel;

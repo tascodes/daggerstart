@@ -187,7 +187,8 @@ export default function LevelUpDrawer({
     {
       id: "multiclass",
       name: "Multiclass",
-      description: "Choose an additional class for your character. (Counts as 2 choices)",
+      description:
+        "Choose an additional class for your character. (Counts as 2 choices)",
       maxSelections: 1,
     },
   ];
@@ -201,34 +202,41 @@ export default function LevelUpDrawer({
 
   // Get level tier-specific history for advanced options
   const getTierSpecificHistory = () => {
-    if (!historyData?.levels) return { hasSubclass: false, hasMulticlass: false };
-    
+    if (!historyData?.levels)
+      return { hasSubclass: false, hasMulticlass: false };
+
     const tierStart = targetLevel >= 8 ? 8 : targetLevel >= 5 ? 5 : 2;
-    const tierLevels = historyData.levels.filter(level => level.level >= tierStart && level.level < targetLevel);
-    
-    const hasSubclass = tierLevels.some(level => 
-      level.choices.some(choice => choice.choice === "SUBCLASS_CARD")
+    const tierLevels = historyData.levels.filter(
+      (level) => level.level >= tierStart && level.level < targetLevel,
     );
-    const hasMulticlass = historyData.levels.some(level => 
-      level.choices.some(choice => choice.choice === "MULTICLASS")
+
+    const hasSubclass = tierLevels.some((level) =>
+      level.choices.some((choice) => choice.choice === "SUBCLASS_CARD"),
     );
-    
+    const hasMulticlass = historyData.levels.some((level) =>
+      level.choices.some((choice) => choice.choice === "MULTICLASS"),
+    );
+
     return { hasSubclass, hasMulticlass };
   };
 
   const { hasSubclass, hasMulticlass } = getTierSpecificHistory();
 
   // Combine base and advanced options for levels 5-10
-  const allOptions = targetLevel >= 5 
-    ? [...baseLevelUpOptions, ...advancedLevelUpOptions]
-    : baseLevelUpOptions;
+  const allOptions =
+    targetLevel >= 5
+      ? [...baseLevelUpOptions, ...advancedLevelUpOptions]
+      : baseLevelUpOptions;
 
   // Build level up options with current selections from previous levels
   const levelUpOptions: LevelUpOption[] = allOptions.map((option) => ({
     ...option,
-    currentSelections: option.id === "subclass" || option.id === "proficiency" || option.id === "multiclass" 
-      ? 0 // These are tier/forever restricted, not count-based
-      : getPreviousChoiceCount(option.id),
+    currentSelections:
+      option.id === "subclass" ||
+      option.id === "proficiency" ||
+      option.id === "multiclass"
+        ? 0 // These are tier/forever restricted, not count-based
+        : getPreviousChoiceCount(option.id),
   }));
 
   // Count how many times each option has been selected
@@ -260,8 +268,10 @@ export default function LevelUpDrawer({
 
     // Check if we can add this option
     const maxSelections = 2;
-    const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
-    
+    const hasProficiencyOrMulticlass = selectedOptions.some(
+      (opt) => opt === "proficiency" || opt === "multiclass",
+    );
+
     if (hasProficiencyOrMulticlass) {
       // Can't add any more options if proficiency or multiclass is selected
       return;
@@ -298,21 +308,27 @@ export default function LevelUpDrawer({
     if (targetLevel >= 5) {
       // If multiclass was selected in any previous level, it can never be selected again
       if (optionId === "multiclass" && hasMulticlass) return true;
-      
+
       // If subclass was selected in this tier, multiclass is disabled until next tier
       if (optionId === "multiclass" && hasSubclass) return true;
-      
+
       // If multiclass was selected in this tier, subclass is disabled until next tier
       if (optionId === "subclass" && hasMulticlass) return true;
-      
+
       // Disable proficiency and multiclass if any other option is already selected
-      if ((optionId === "proficiency" || optionId === "multiclass") && selectedOptions.length > 0 && !selectedOptions.includes(optionId)) {
+      if (
+        (optionId === "proficiency" || optionId === "multiclass") &&
+        selectedOptions.length > 0 &&
+        !selectedOptions.includes(optionId)
+      ) {
         return true;
       }
-      
+
       // Disable all other options if proficiency or multiclass is selected
       if (optionId !== "proficiency" && optionId !== "multiclass") {
-        const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
+        const hasProficiencyOrMulticlass = selectedOptions.some(
+          (opt) => opt === "proficiency" || opt === "multiclass",
+        );
         if (hasProficiencyOrMulticlass) return true;
       }
     }
@@ -326,10 +342,15 @@ export default function LevelUpDrawer({
     if (totalCurrentAndPreviousSelections >= option.maxSelections) return true;
 
     // For proficiency and multiclass, they can only be selected once and count as 2 choices
-    if ((optionId === "proficiency" || optionId === "multiclass") && currentCount > 0) return true;
+    if (
+      (optionId === "proficiency" || optionId === "multiclass") &&
+      currentCount > 0
+    )
+      return true;
 
     // Disable if we already have 2 total selections for this level-up (unless it's proficiency/multiclass)
-    if (selectedOptions.length >= 2 && !selectedOptions.includes(optionId)) return true;
+    if (selectedOptions.length >= 2 && !selectedOptions.includes(optionId))
+      return true;
 
     return false;
   };
@@ -338,14 +359,16 @@ export default function LevelUpDrawer({
     targetLevel === 2 || targetLevel === 5 || targetLevel === 8;
 
   const handleConfirmLevelUp = () => {
-    const hasProficiencyOrMulticlass = selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass");
+    const hasProficiencyOrMulticlass = selectedOptions.some(
+      (opt) => opt === "proficiency" || opt === "multiclass",
+    );
     const hasMulticlassSelection = selectedOptions.includes("multiclass");
-    
+
     // Validation: either 2 normal choices, or 1 special choice (proficiency/multiclass)
     if (!hasProficiencyOrMulticlass && selectedOptions.length !== 2) {
       return;
     }
-    
+
     if (hasProficiencyOrMulticlass && selectedOptions.length !== 1) {
       return;
     }
@@ -353,7 +376,7 @@ export default function LevelUpDrawer({
     if (requiresNewExperience && !newExperience.trim()) {
       return;
     }
-    
+
     if (hasMulticlassSelection && !multiclassClass.trim()) {
       return;
     }
@@ -373,7 +396,9 @@ export default function LevelUpDrawer({
         | "multiclass"
       )[],
       newExperience: requiresNewExperience ? newExperience.trim() : undefined,
-      multiclassClass: hasMulticlassSelection ? multiclassClass.trim() : undefined,
+      multiclassClass: hasMulticlassSelection
+        ? multiclassClass.trim()
+        : undefined,
     });
   };
 
@@ -413,7 +438,11 @@ export default function LevelUpDrawer({
             </p>
             <p className="mt-2 text-sm font-medium text-sky-400">
               Selections: {selectedOptions.length}/
-              {selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass") ? "1 (special)" : "2"}
+              {selectedOptions.some(
+                (opt) => opt === "proficiency" || opt === "multiclass",
+              )
+                ? "1 (special)"
+                : "2"}
             </p>
           </div>
 
@@ -466,7 +495,10 @@ export default function LevelUpDrawer({
               <p className="mb-3 text-sm text-slate-300">
                 Choose an additional class for your character:
               </p>
-              <Select value={multiclassClass} onValueChange={setMulticlassClass}>
+              <Select
+                value={multiclassClass}
+                onValueChange={setMulticlassClass}
+              >
                 <SelectTrigger className="border-slate-600 bg-slate-700 text-white">
                   <SelectValue placeholder="Select a class to multiclass into" />
                 </SelectTrigger>
@@ -584,9 +616,12 @@ export default function LevelUpDrawer({
               disabled={
                 levelUpMutation.isPending ||
                 (requiresNewExperience && !newExperience.trim()) ||
-                (selectedOptions.includes("multiclass") && !multiclassClass.trim()) ||
-                (selectedOptions.some(opt => opt === "proficiency" || opt === "multiclass") 
-                  ? selectedOptions.length !== 1 
+                (selectedOptions.includes("multiclass") &&
+                  !multiclassClass.trim()) ||
+                (selectedOptions.some(
+                  (opt) => opt === "proficiency" || opt === "multiclass",
+                )
+                  ? selectedOptions.length !== 1
                   : selectedOptions.length !== 2)
               }
               className="flex-1 bg-sky-500 text-white hover:bg-sky-600 disabled:bg-slate-700 disabled:text-slate-400"

@@ -129,7 +129,7 @@ export default function NewCharacterPage() {
   };
 
   // Get the character's current level
-  const characterLevel = isEditMode ? existingCharacter?.level ?? 1 : 1;
+  const characterLevel = isEditMode ? (existingCharacter?.level ?? 1) : 1;
   const experienceCount = getExperienceCount(characterLevel);
 
   const createCharacter = api.character.create.useMutation({
@@ -1171,31 +1171,31 @@ export default function NewCharacterPage() {
                                       </span>
                                     )}
                                   </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="What experience defines your character?"
-                                    {...field}
-                                    value={field.value ?? ""}
-                                    onChange={(e) => {
-                                      const currentExperiences =
-                                        form.getValues("experiences") ?? [];
-                                      const newExperiences = [
-                                        ...currentExperiences,
-                                      ];
-                                      newExperiences[index] = e.target.value;
-                                      form.setValue(
-                                        "experiences",
-                                        newExperiences,
-                                      );
-                                    }}
-                                    className="border-slate-600 bg-slate-700 text-white placeholder-slate-400"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        );
+                                  <FormControl>
+                                    <Input
+                                      placeholder="What experience defines your character?"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                      onChange={(e) => {
+                                        const currentExperiences =
+                                          form.getValues("experiences") ?? [];
+                                        const newExperiences = [
+                                          ...currentExperiences,
+                                        ];
+                                        newExperiences[index] = e.target.value;
+                                        form.setValue(
+                                          "experiences",
+                                          newExperiences,
+                                        );
+                                      }}
+                                      className="border-slate-600 bg-slate-700 text-white placeholder-slate-400"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          );
                         })}
                         <div className="text-slate-400">
                           <b>Backgrounds like:</b> Bodyguard, Con Artist,
