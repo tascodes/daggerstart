@@ -194,7 +194,7 @@ export default function CharacterHeader({
               <div className="rounded-lg border border-slate-600 bg-slate-700 p-3">
                 <p className="text-sm text-slate-400">Current Game</p>
                 <Link
-                  href={`/games/${character.game.id}`}
+                  href={`/campaigns/${character.game.id}`}
                   className="font-medium text-sky-400 hover:text-sky-300"
                 >
                   {character.game.name}

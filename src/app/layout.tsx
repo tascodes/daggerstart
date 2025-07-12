@@ -1,7 +1,7 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Archivo, Geist_Mono } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { SessionProvider } from "next-auth/react";
@@ -14,9 +14,14 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-const geist = Geist({
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-archivo-sans",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
 });
 
 export default async function RootLayout({
@@ -25,8 +30,8 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body className="bg-slate-900 text-white">
+    <html lang="en" className={`${archivo.variable} ${geistMono.variable}`}>
+      <body className="bg-slate-900 font-sans text-white">
         <TRPCReactProvider>
           <SessionProvider session={session}>
             <Navigation />
