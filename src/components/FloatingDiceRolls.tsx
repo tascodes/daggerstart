@@ -182,8 +182,8 @@ const FloatingDiceRolls = ({ gameId, onFearRoll }: FloatingDiceRollsProps) => {
     // This prevents notifications from showing for existing rolls on initial load
     if (newRolls.length > 0 && hasInitializedRef.current) {
       newRolls.forEach((roll) => {
-        // Only show notifications if enabled
-        if (notificationsEnabled) {
+        // Only show notifications if enabled AND panel is not expanded
+        if (notificationsEnabled && !isExpanded) {
           const notification: NewRollNotification = {
             id: `notification-${roll.id}`,
             roll: roll as DiceRoll,

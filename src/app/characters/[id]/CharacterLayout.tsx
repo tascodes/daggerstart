@@ -110,7 +110,7 @@ export default function CharacterLayout({
           </Link>
 
           {/* Level Up Button - show if has incomplete levels or can level up normally (under level 10) */}
-          {(levelData?.hasIncompletelevels ?? currentCharacter.level < 10) && (
+          {(levelData?.hasIncompletelevels || currentCharacter.level < 10) && (
             <LevelUpDrawer
               characterId={currentCharacter.id}
               currentLevel={currentCharacter.level}
