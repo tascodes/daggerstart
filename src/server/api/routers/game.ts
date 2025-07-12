@@ -9,6 +9,7 @@ import {
   gameEmitter,
   type DiceRollEventData,
   type FearUpdateEventData,
+  type CharacterUpdateEventData,
 } from "~/server/api/events";
 import { getDiceRollOutcome } from "~/utils/dice";
 
@@ -363,9 +364,62 @@ export const gameRouter = createTRPCRouter({
         },
       });
 
-      // Check if this is a "With Fear" roll and add Fear for game master
+      // Check roll outcome and handle Hope/Fear/Critical effects
       const rollOutcome = getDiceRollOutcome(hopeResult, fearResult);
-      if (rollOutcome === "with Fear") {
+
+      if (rollOutcome === "Critical" && input.characterId) {
+        // Critical success: Grant Hope and reduce Stress if any
+        void ctx.db.character
+          .findUnique({
+            where: { id: input.characterId },
+            select: { hope: true, stress: true },
+          })
+          .then((character) => {
+            if (character) {
+              const updates: {
+                hope?: { increment: number };
+                stress?: { decrement: number };
+              } = {};
+
+              // Grant Hope if not at max (6)
+              if (character.hope < 6) {
+                updates.hope = { increment: 1 };
+              }
+
+              // Reduce Stress if any exists
+              if (character.stress > 0) {
+                updates.stress = { decrement: 1 };
+              }
+
+              // Only update if there are changes to make
+              if (Object.keys(updates).length > 0) {
+                return ctx.db.character
+                  .update({
+                    where: { id: input.characterId },
+                    data: updates,
+                    select: { hope: true, stress: true },
+                  })
+                  .then((updatedCharacter) => {
+                    // Emit event for real-time updates
+                    gameEmitter.emit("characterUpdate", {
+                      characterId: input.characterId!,
+                      gameId: input.gameId,
+                      hope: updatedCharacter.hope,
+                      updatedAt: new Date(),
+                    });
+                    return updatedCharacter;
+                  });
+              }
+            }
+            return null;
+          })
+          .catch((error) => {
+            console.error(
+              "Failed to grant Critical benefits to character:",
+              error,
+            );
+          });
+      } else if (rollOutcome === "with Fear") {
         // Silently add Fear to the game master (no await to avoid slowing down the roll)
         void ctx.db.gameMasterFear
           .upsert({
@@ -420,6 +474,42 @@ export const gameRouter = createTRPCRouter({
                 updatedAt: new Date(),
               });
             }
+          });
+      } else if (rollOutcome === "with Hope" && input.characterId) {
+        // Silently add Hope to the character if they're not at max (6)
+        void ctx.db.character
+          .findUnique({
+            where: { id: input.characterId },
+            select: { hope: true, stress: true },
+          })
+          .then((character) => {
+            if (character && character.hope < 6) {
+              return ctx.db.character
+                .update({
+                  where: { id: input.characterId },
+                  data: {
+                    hope: {
+                      increment: 1,
+                    },
+                  },
+                  select: { hope: true, stress: true },
+                })
+                .then((updatedCharacter) => {
+                  // Emit event for real-time updates
+                  gameEmitter.emit("characterUpdate", {
+                    characterId: input.characterId!,
+                    gameId: input.gameId,
+                    hope: updatedCharacter.hope,
+                    stress: updatedCharacter.stress,
+                    updatedAt: new Date(),
+                  });
+                  return updatedCharacter;
+                });
+            }
+            return null;
+          })
+          .catch((error) => {
+            console.error("Failed to grant Hope to character:", error);
           });
       }
 
@@ -762,6 +852,42 @@ export const gameRouter = createTRPCRouter({
 
         return () => {
           gameEmitter.off("fearUpdate", onFearUpdate);
+        };
+      });
+    }),
+
+  // Subscribe to Character updates for a specific game
+  onCharacterUpdate: protectedProcedure
+    .input(z.object({ gameId: z.string() }))
+    .subscription(async ({ ctx, input }) => {
+      // Verify user is in the game
+      const game = await ctx.db.game.findFirst({
+        where: {
+          id: input.gameId,
+          OR: [
+            { gameMasterId: ctx.session.user.id },
+            { characters: { some: { userId: ctx.session.user.id } } },
+          ],
+        },
+      });
+
+      if (!game) {
+        throw new Error(
+          "You are not authorized to subscribe to character updates in this game",
+        );
+      }
+
+      return observable<CharacterUpdateEventData>((emit) => {
+        const onCharacterUpdate = (data: CharacterUpdateEventData) => {
+          if (data.gameId === input.gameId) {
+            emit.next(data);
+          }
+        };
+
+        gameEmitter.on("characterUpdate", onCharacterUpdate);
+
+        return () => {
+          gameEmitter.off("characterUpdate", onCharacterUpdate);
         };
       });
     }),

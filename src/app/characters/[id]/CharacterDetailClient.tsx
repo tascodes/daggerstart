@@ -43,6 +43,20 @@ export default function CharacterDetailClient({
     },
   );
 
+  // Subscribe to Character updates
+  api.game.onCharacterUpdate.useSubscription(
+    { gameId: character?.gameId ?? "" },
+    {
+      enabled: !!character?.gameId && !!session,
+      onData: (data) => {
+        // Trigger a refetch when character data updates occur
+        if (data.characterId === character?.id) {
+          void utils.character.getById.invalidate({ id: character.id });
+        }
+      },
+    },
+  );
+
   // Hope mutation with optimistic updates
   const updateHope = api.character.updateHealthStat.useMutation({
     onMutate: async (variables) => {

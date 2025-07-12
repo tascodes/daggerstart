@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { AbilityCard } from "~/components/AbilityCard";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Plus } from "lucide-react";
 import { Abilities, type Ability } from "~/lib/srd/abilities";
 import { classes } from "~/lib/srd/classes";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import AddCardModal from "./AddCardModal";
 
 interface Character {
   id: string;
@@ -88,6 +91,7 @@ export default function CharacterCardsClient({
 }: CharacterCardsClientProps) {
   const { data: session } = useSession();
   const isOwner = character.user.id === session?.user.id;
+  const [isAddCardModalOpen, setIsAddCardModalOpen] = useState(false);
 
   // Fetch selected cards data
   const { data: cardData } = api.character.getSelectedCards.useQuery({
@@ -264,20 +268,29 @@ export default function CharacterCardsClient({
         />
       )}
 
-      {/* Available Cards Section */}
-      <CardSection
-        title={`Available Cards (${availableAbilities.length})`}
-        abilities={availableAbilities}
-        isOwner={isOwner}
+      {/* Add Card Button */}
+      {isOwner && cardData && cardData.usedSlots < cardData.availableSlots && (
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setIsAddCardModalOpen(true)}
+            size="lg"
+            className="bg-sky-500 text-white hover:bg-sky-600"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Browse Available Cards ({availableAbilities.length})
+          </Button>
+        </div>
+      )}
+
+      {/* Add Card Modal */}
+      <AddCardModal
+        isOpen={isAddCardModalOpen}
+        onClose={() => setIsAddCardModalOpen(false)}
+        availableAbilities={availableAbilities}
         characterLevel={character.level}
-        onCardAction={handleSelectCard}
-        isSelected={false}
         canSelectCard={canSelectCard}
-        emptyMessage={
-          selectedAbilities.length > 0
-            ? "All available cards have been selected."
-            : "No abilities available for this character's domains and level."
-        }
+        onSelectCard={handleSelectCard}
+        isPending={selectCardMutation.isPending}
       />
     </div>
   );

@@ -3,7 +3,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import DomainBadge from "~/components/DomainBadge";
 import { cn } from "~/lib/utils";
-import { Check, Plus } from "lucide-react";
+import { parseMarkdownText } from "~/lib/utils/markdown";
+import { Check } from "lucide-react";
 
 interface AbilityCardProps {
   name: string;
@@ -28,25 +29,13 @@ export const AbilityCard = ({
   domain,
   isSelected = false,
   isOwner = false,
-  onSelect,
   onDeselect,
-  canSelect = true,
-  characterLevel,
   className,
 }: AbilityCardProps) => {
-  const getTooltipMessage = () => {
-    if (canSelect) return undefined;
-
-    const cardLevel = parseInt(level);
-    if (characterLevel && cardLevel > characterLevel) {
-      return `Card level ${cardLevel} is too high for level ${characterLevel} character`;
-    }
-    return "No card slots remaining";
-  };
   return (
     <Card
       className={cn(
-        "relative flex aspect-[2/3] flex-col border-slate-700 bg-slate-800 transition-all",
+        "relative flex flex-col border-slate-700 bg-slate-800 transition-all",
         isSelected && "border-sky-500 bg-slate-700 ring-2 ring-sky-500/20",
         className,
       )}
@@ -66,7 +55,7 @@ export const AbilityCard = ({
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col justify-between">
-        <p className="text-sm text-slate-300">{text}</p>
+        <div className="text-sm text-slate-300">{parseMarkdownText(text)}</div>
 
         <div className="mt-4 space-y-3">
           {/* Token visualization */}
@@ -80,34 +69,16 @@ export const AbilityCard = ({
           </div>
 
           {/* Selection button for owner */}
-          {isOwner && (
+          {isOwner && isSelected && (
             <div className="flex justify-center">
-              {isSelected ? (
-                <Button
-                  onClick={onDeselect}
-                  size="sm"
-                  className="bg-red-600 text-white hover:bg-red-700"
-                >
-                  <Check className="mr-1 h-4 w-4" />
-                  Selected
-                </Button>
-              ) : (
-                <Button
-                  onClick={onSelect}
-                  disabled={!canSelect}
-                  size="sm"
-                  variant="outline"
-                  className={cn(
-                    "border-sky-500 text-sky-400 hover:bg-sky-500 hover:text-white",
-                    !canSelect &&
-                      "cursor-not-allowed border-slate-600 text-slate-500 opacity-50",
-                  )}
-                  title={getTooltipMessage()}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Select
-                </Button>
-              )}
+              <Button
+                onClick={onDeselect}
+                size="sm"
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                <Check className="mr-1 h-4 w-4" />
+                Selected
+              </Button>
             </div>
           )}
         </div>

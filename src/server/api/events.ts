@@ -30,9 +30,18 @@ interface FearUpdateEventData {
   updatedAt: Date;
 }
 
+interface CharacterUpdateEventData {
+  characterId: string;
+  gameId: string;
+  hope?: number;
+  stress?: number;
+  updatedAt: Date;
+}
+
 export interface GameEvents {
   newRoll: (data: DiceRollEventData) => void;
   fearUpdate: (data: FearUpdateEventData) => void;
+  characterUpdate: (data: CharacterUpdateEventData) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -66,4 +75,8 @@ if (process.env.NODE_ENV !== "production") {
 // Keep backward compatibility
 export const diceRollEmitter = gameEmitter;
 
-export type { DiceRollEventData, FearUpdateEventData };
+export type {
+  DiceRollEventData,
+  FearUpdateEventData,
+  CharacterUpdateEventData,
+};
