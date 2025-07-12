@@ -319,17 +319,17 @@ export default function CharacterInventoryClient({
       </div>
 
       {/* Search and Filter */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search items..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-slate-600 bg-slate-700 pl-10 text-white placeholder:text-slate-400"
+            className="min-w-[300px] border-slate-600 bg-slate-700 pl-10 text-white placeholder:text-slate-400"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {["ALL", "ITEM", "ARMOR", "WEAPON", "CONSUMABLE"].map((type) => (
             <Button
               key={type}

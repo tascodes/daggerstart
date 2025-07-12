@@ -13,7 +13,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Search, Package, Shield, Sword, Zap, Plus } from "lucide-react";
+import { Search, Package, Shield, Sword, Plus, Apple } from "lucide-react";
 import { api } from "~/trpc/react";
 import { type ItemType } from "@prisma/client";
 import { Items, type Item } from "~/lib/srd/items";
@@ -122,7 +122,7 @@ export default function AddItemModal({
       case "WEAPON":
         return <Sword className="h-4 w-4 text-red-400" />;
       case "CONSUMABLE":
-        return <Zap className="h-4 w-4 text-yellow-400" />;
+        return <Apple className="h-4 w-4 text-yellow-400" />;
       default:
         return <Package className="h-4 w-4" />;
     }
@@ -245,7 +245,7 @@ export default function AddItemModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[80vh] !w-[95vw] !max-w-[95vw] flex-col overflow-hidden border-slate-700 bg-slate-800 lg:!w-[80vw] lg:!max-w-[80vw]">
+      <DialogContent className="flex h-[100vh] max-h-[100vh] !w-[100vw] !max-w-[100vw] flex-col overflow-hidden border-slate-700 bg-slate-800 sm:h-auto sm:max-h-[80vh] lg:!w-[80vw] lg:!max-w-[80vw]">
         <DialogHeader>
           <DialogTitle className="text-white">
             Add Item to Inventory
@@ -336,9 +336,9 @@ export default function AddItemModal({
               {filteredItems.map((item) => (
                 <Card
                   key={`${item.type}-${item.name}`}
-                  className="border-slate-600 bg-slate-700"
+                  className="border-slate-600 bg-slate-700 px-3 py-2"
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-2">
                     <div className="flex items-start gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="mb-3 flex items-center gap-2">
