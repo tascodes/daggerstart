@@ -1,5 +1,5 @@
-import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
+import { auth } from "@/server/auth";
+import { api, HydrateClient } from "@/trpc/server";
 import { redirect, notFound } from "next/navigation";
 import CampaignDetailClient from "./CampaignDetailClient";
 

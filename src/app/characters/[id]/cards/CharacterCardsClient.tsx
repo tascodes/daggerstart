@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { AbilityCard } from "~/components/AbilityCard";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { AbilityCard } from "@/components/AbilityCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Abilities, type Ability } from "~/lib/srd/abilities";
-import { classes } from "~/lib/srd/classes";
-import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
+import { Abilities, type Ability } from "@/lib/srd/abilities";
+import { classes } from "@/lib/srd/classes";
+import { api } from "@/trpc/react";
+import { cn } from "@/lib/utils";
 import AddCardModal from "./AddCardModal";
 
 interface Character {

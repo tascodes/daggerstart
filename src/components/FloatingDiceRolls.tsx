@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dice6,
   Dice1,
@@ -24,12 +24,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { api } from "~/trpc/react";
+} from "@/components/ui/alert-dialog";
+import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import RollOutcomeBadge from "~/components/RollOutcomeBadge";
-import { getDiceRollOutcome } from "~/utils/dice";
+import RollOutcomeBadge from "@/components/RollOutcomeBadge";
+import { getDiceRollOutcome } from "@/utils/dice";
 
 interface FloatingDiceRollsProps {
   gameId?: string;

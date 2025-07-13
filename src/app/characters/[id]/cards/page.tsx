@@ -1,4 +1,4 @@
-import { api } from "~/trpc/server";
+import { api } from "@/trpc/server";
 import CharacterCardsClient from "./CharacterCardsClient";
 
 interface CharacterCardsPageProps {

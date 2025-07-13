@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { api } from "~/trpc/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { api } from "@/trpc/react";
 import { Dice1, Dice6, Zap } from "lucide-react";
 
 interface DiceRollerProps {

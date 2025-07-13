@@ -4,14 +4,14 @@ import {
   createTRPCRouter,
   protectedProcedure,
   observable,
-} from "~/server/api/trpc";
+} from "@/server/api/trpc";
 import {
   gameEmitter,
   type DiceRollEventData,
   type FearUpdateEventData,
   type CharacterUpdateEventData,
-} from "~/server/api/events";
-import { getDiceRollOutcome } from "~/utils/dice";
+} from "@/server/api/events";
+import { getDiceRollOutcome } from "@/utils/dice";
 
 // Define types for dice roll results since rpg-dice-roller doesn't have proper TypeScript types
 interface DiceRollResult {

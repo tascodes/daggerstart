@@ -1,15 +1,15 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Button } from "~/components/ui/button";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import CharacterHeader from "~/components/CharacterHeader";
-import CharacterTabs from "~/components/CharacterTabs";
-import FloatingDiceRolls from "~/components/FloatingDiceRolls";
-import LevelUpDrawer from "~/components/LevelUpDrawer";
+import CharacterHeader from "@/components/CharacterHeader";
+import CharacterTabs from "@/components/CharacterTabs";
+import FloatingDiceRolls from "@/components/FloatingDiceRolls";
+import LevelUpDrawer from "@/components/LevelUpDrawer";
 import { usePathname } from "next/navigation";
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 
 interface Character {
   id: string;

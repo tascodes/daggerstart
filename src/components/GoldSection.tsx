@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
 

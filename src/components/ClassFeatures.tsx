@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { getCharacterSRDData } from "~/lib/utils/srd-mapping";
-import { api } from "~/trpc/react";
+import { getCharacterSRDData } from "@/lib/utils/srd-mapping";
+import { api } from "@/trpc/react";
 import { LevelChoice } from "@prisma/client";
 
 interface Character {

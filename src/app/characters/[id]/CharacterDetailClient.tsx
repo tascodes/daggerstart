@@ -1,16 +1,16 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import CharacterExperiences from "~/components/CharacterExperiences";
-import CharacterTraits from "~/components/CharacterTraits";
-import HealthSection from "~/components/HealthSection";
-import DefenseSection from "~/components/DefenseSection";
-import EquippedWeaponSection from "~/components/EquippedWeaponSection";
-import ClassFeatures from "~/components/ClassFeatures";
-import FearBar from "~/components/FearBar";
-import FloatingHopePanel from "~/components/FloatingHopePanel";
-import FloatingFearPanel from "~/components/FloatingFearPanel";
-import { api } from "~/trpc/react";
+import CharacterExperiences from "@/components/CharacterExperiences";
+import CharacterTraits from "@/components/CharacterTraits";
+import HealthSection from "@/components/HealthSection";
+import DefenseSection from "@/components/DefenseSection";
+import EquippedWeaponSection from "@/components/EquippedWeaponSection";
+import ClassFeatures from "@/components/ClassFeatures";
+import FearBar from "@/components/FearBar";
+import FloatingHopePanel from "@/components/FloatingHopePanel";
+import FloatingFearPanel from "@/components/FloatingFearPanel";
+import { api } from "@/trpc/react";
 
 interface CharacterDetailClientProps {
   characterId: string;

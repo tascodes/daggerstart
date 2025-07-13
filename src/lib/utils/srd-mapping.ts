@@ -1,5 +1,5 @@
-import { classes, type Class } from "~/lib/srd/classes";
-import { Subclasses, type Subclass } from "~/lib/srd/subclasses";
+import { classes, type Class } from "@/lib/srd/classes";
+import { Subclasses, type Subclass } from "@/lib/srd/subclasses";
 
 /**
  * Normalizes a character class name to match SRD format

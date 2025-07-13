@@ -8,20 +8,20 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "~/components/ui/sheet";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { TrendingUp, CheckCircle2, Plus, Minus, Star } from "lucide-react";
-import { cn } from "~/lib/utils";
-import { api } from "~/trpc/react";
-import { classes } from "~/lib/srd/classes";
+import { cn } from "@/lib/utils";
+import { api } from "@/trpc/react";
+import { classes } from "@/lib/srd/classes";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "@/components/ui/select";
 
 interface LevelUpOption {
   id: string;

@@ -1,4 +1,4 @@
-import { getDiceRollOutcome } from "~/utils/dice";
+import { getDiceRollOutcome } from "@/utils/dice";
 
 interface RollOutcomeBadgeProps {
   hopeResult: number;

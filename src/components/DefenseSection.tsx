@@ -2,11 +2,11 @@
 
 import { useCallback } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 import ArmorBar from "./ArmorBar";
 import { Input } from "./ui/input";
 import { Shield } from "lucide-react";
-import { Armors } from "~/lib/srd/armor";
+import { Armors } from "@/lib/srd/armor";
 
 interface Character {
   id: string;

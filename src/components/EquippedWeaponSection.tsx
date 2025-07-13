@@ -1,9 +1,9 @@
 "use client";
 
 import { Sword, Dices, ActivitySquare } from "lucide-react";
-import { Weapons, type Weapon } from "~/lib/srd/weapons";
-import { Button } from "~/components/ui/button";
-import { api } from "~/trpc/react";
+import { Weapons, type Weapon } from "@/lib/srd/weapons";
+import { Button } from "@/components/ui/button";
+import { api } from "@/trpc/react";
 import type { Character } from "@prisma/client";
 
 // Extended character type with computed proficiency

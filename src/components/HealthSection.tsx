@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 import HealthBar from "./HealthBar";
 import StressBar from "./StressBar";
 import HopeBar from "./HopeBar";
 import { Input } from "./ui/input";
 import type { Character } from "@prisma/client";
 // Removed unused import
-import { classes } from "~/lib/srd/classes";
+import { classes } from "@/lib/srd/classes";
 
 interface HealthSectionProps {
   character: Character;

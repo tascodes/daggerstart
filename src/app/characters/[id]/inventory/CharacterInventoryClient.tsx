@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Search,
@@ -17,14 +17,14 @@ import {
   Trash2,
   Minus,
 } from "lucide-react";
-import GoldSection from "~/components/GoldSection";
-import { api } from "~/trpc/react";
+import GoldSection from "@/components/GoldSection";
+import { api } from "@/trpc/react";
 import { type ItemType } from "@prisma/client";
 import AddItemModal from "./AddItemModal";
-import { Items, type Item } from "~/lib/srd/items";
-import { Armors, type Armor } from "~/lib/srd/armor";
-import { Weapons, type Weapon } from "~/lib/srd/weapons";
-import { Consumables, type Consumable } from "~/lib/srd/consumables";
+import { Items, type Item } from "@/lib/srd/items";
+import { Armors, type Armor } from "@/lib/srd/armor";
+import { Weapons, type Weapon } from "@/lib/srd/weapons";
+import { Consumables, type Consumable } from "@/lib/srd/consumables";
 
 interface CharacterInventoryClientProps {
   characterId: string;

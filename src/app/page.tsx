@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { auth } from "~/server/auth";
-import { Button } from "~/components/ui/button";
+import { auth } from "@/server/auth";
+import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
   const session = await auth();

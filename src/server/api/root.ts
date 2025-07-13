@@ -1,7 +1,7 @@
-import { postRouter } from "~/server/api/routers/post";
-import { characterRouter } from "~/server/api/routers/character";
-import { gameRouter } from "~/server/api/routers/game";
-import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+import { postRouter } from "@/server/api/routers/post";
+import { characterRouter } from "@/server/api/routers/character";
+import { gameRouter } from "@/server/api/routers/game";
+import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
  * This is the primary router for your server.

@@ -1,8 +1,8 @@
 "use client";
 
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 import { Zap, Sword, Trash2 } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,9 +13,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import Image from "next/image";
-import RollOutcomeBadge from "~/components/RollOutcomeBadge";
+import RollOutcomeBadge from "@/components/RollOutcomeBadge";
 
 interface DiceRollFeedProps {
   gameId: string;

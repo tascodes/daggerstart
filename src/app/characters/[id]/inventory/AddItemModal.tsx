@@ -7,19 +7,19 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Search, Package, Shield, Sword, Plus, Apple } from "lucide-react";
-import { api } from "~/trpc/react";
+import { api } from "@/trpc/react";
 import { type ItemType } from "@prisma/client";
-import { Items, type Item } from "~/lib/srd/items";
-import { Armors, type Armor } from "~/lib/srd/armor";
-import { Weapons, type Weapon } from "~/lib/srd/weapons";
-import { Consumables, type Consumable } from "~/lib/srd/consumables";
+import { Items, type Item } from "@/lib/srd/items";
+import { Armors, type Armor } from "@/lib/srd/armor";
+import { Weapons, type Weapon } from "@/lib/srd/weapons";
+import { Consumables, type Consumable } from "@/lib/srd/consumables";
 
 interface AddItemModalProps {
   isOpen: boolean;

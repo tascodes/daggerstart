@@ -1,19 +1,19 @@
 "use client";
 
-import { Badge } from "~/components/ui/badge";
-import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "~/components/ui/popover";
+} from "@/components/ui/popover";
 import { User, Crown, Info, Edit } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import DomainBadge from "~/components/DomainBadge";
-import LevelHistoryDrawer from "~/components/LevelHistoryDrawer";
-import { classes } from "~/lib/srd/classes";
-import { Subclasses } from "~/lib/srd/subclasses";
+import DomainBadge from "@/components/DomainBadge";
+import LevelHistoryDrawer from "@/components/LevelHistoryDrawer";
+import { classes } from "@/lib/srd/classes";
+import { Subclasses } from "@/lib/srd/subclasses";
 
 interface CharacterHeaderProps {
   character: {

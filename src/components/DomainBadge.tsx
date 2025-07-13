@@ -1,7 +1,7 @@
 "use client";
 
-import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const DomainColors = {
   Arcana: "bg-purple-600 text-white border-purple-700",

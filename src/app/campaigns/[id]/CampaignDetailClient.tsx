@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { Button } from "~/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,23 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
-import { Label } from "~/components/ui/label";
-import { api } from "~/trpc/react";
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { api } from "@/trpc/react";
 import Link from "next/link";
 import { Crown, Users, UserMinus, UserPlus } from "lucide-react";
 import Image from "next/image";
-import DiceRoller from "~/components/DiceRoller";
-import DiceRollFeed from "~/components/DiceRollFeed";
-import FloatingDiceRolls from "~/components/FloatingDiceRolls";
-import FearBar from "~/components/FearBar";
+import DiceRoller from "@/components/DiceRoller";
+import DiceRollFeed from "@/components/DiceRollFeed";
+import FloatingDiceRolls from "@/components/FloatingDiceRolls";
+import FearBar from "@/components/FearBar";
 
 interface CampaignDetailClientProps {
   campaignId: string;

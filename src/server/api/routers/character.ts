@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { LevelChoice, ItemType } from "@prisma/client";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { classes } from "~/lib/srd/classes";
-import { Abilities } from "~/lib/srd/abilities";
-import { Weapons } from "~/lib/srd/weapons";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { classes } from "@/lib/srd/classes";
+import { Abilities } from "@/lib/srd/abilities";
+import { Weapons } from "@/lib/srd/weapons";
 import { type PrismaClient } from "@prisma/client";
 
 async function calculateMaxHp(

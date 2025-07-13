@@ -8,15 +8,15 @@ import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import DomainBadge from "~/components/DomainBadge";
-import { classes } from "~/lib/srd/classes";
-import { Ancestries } from "~/lib/srd/ancestries";
-import { Communities } from "~/lib/srd/communities";
-import { Subclasses } from "~/lib/srd/subclasses";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import DomainBadge from "@/components/DomainBadge";
+import { classes } from "@/lib/srd/classes";
+import { Ancestries } from "@/lib/srd/ancestries";
+import { Communities } from "@/lib/srd/communities";
+import { Subclasses } from "@/lib/srd/subclasses";
 import { classShortDescriptions } from "./constants";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -25,7 +25,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "~/components/ui/form";
+} from "@/components/ui/form";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +34,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { api } from "~/trpc/react";
+} from "@/components/ui/dialog";
+import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
 
 const SECTIONS = {

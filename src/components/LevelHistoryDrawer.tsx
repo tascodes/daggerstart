@@ -8,11 +8,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "~/components/ui/sheet";
-import { Badge } from "~/components/ui/badge";
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import { TrendingUp, CheckCircle, Award, Star } from "lucide-react";
-import { api } from "~/trpc/react";
-import { classes } from "~/lib/srd/classes";
+import { api } from "@/trpc/react";
+import { classes } from "@/lib/srd/classes";
 
 interface LevelHistoryDrawerProps {
   characterId: string;

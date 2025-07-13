@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Button } from "~/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,8 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
-import { api } from "~/trpc/react";
+} from "@/components/ui/alert-dialog";
+import { api } from "@/trpc/react";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
 

@@ -1,12 +1,12 @@
-import "~/styles/globals.css";
+import "@/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
 
-import { TRPCReactProvider } from "~/trpc/react";
+import { TRPCReactProvider } from "@/trpc/react";
 import { SessionProvider } from "next-auth/react";
-import { auth } from "~/server/auth";
-import Navigation from "~/components/Navigation";
+import { auth } from "@/server/auth";
+import Navigation from "@/components/Navigation";
 
 export const metadata: Metadata = {
   title: "Daggerheart Character Manager",
