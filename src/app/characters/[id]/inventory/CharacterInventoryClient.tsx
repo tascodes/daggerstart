@@ -63,6 +63,21 @@ export default function CharacterInventoryClient({
   const deleteItemMutation = api.character.deleteInventoryItem.useMutation({
     onSuccess: () => {
       void refetch();
+      void refetchCharacter();
+    },
+  });
+
+  const equipMutation = api.character.equipItem.useMutation({
+    onSuccess: () => {
+      void refetch();
+      void refetchCharacter();
+    },
+  });
+
+  const unequipMutation = api.character.unequipItem.useMutation({
+    onSuccess: () => {
+      void refetch();
+      void refetchCharacter();
     },
   });
 
@@ -184,6 +199,93 @@ export default function CharacterInventoryClient({
     if (confirm("Are you sure you want to delete this item?")) {
       deleteItemMutation.mutate({ id: itemId });
     }
+  };
+
+  const handleEquipItem = (itemName: string, itemType: ItemType) => {
+    if (itemType === "WEAPON") {
+      // Find weapon details to determine slot
+      const weaponDetails = Weapons.find((w) => w.name === itemName);
+      if (!weaponDetails) return;
+
+      const isPrimary = weaponDetails.primary_or_secondary === "Primary";
+      const weaponSlot = isPrimary ? "PRIMARY" : "SECONDARY";
+
+      equipMutation.mutate({
+        characterId,
+        itemName,
+        itemType,
+        weaponSlot,
+      });
+    } else if (itemType === "ARMOR") {
+      equipMutation.mutate({
+        characterId,
+        itemName,
+        itemType,
+      });
+    }
+  };
+
+  const handleUnequipItem = (itemName: string, itemType: ItemType) => {
+    if (itemType === "WEAPON") {
+      // Find weapon details to determine slot
+      const weaponDetails = Weapons.find((w) => w.name === itemName);
+      if (!weaponDetails) return;
+
+      const isPrimary = weaponDetails.primary_or_secondary === "Primary";
+      const weaponSlot = isPrimary ? "PRIMARY" : "SECONDARY";
+
+      unequipMutation.mutate({
+        characterId,
+        itemType,
+        weaponSlot,
+      });
+    } else if (itemType === "ARMOR") {
+      unequipMutation.mutate({
+        characterId,
+        itemType,
+      });
+    }
+  };
+
+  const isItemEquipped = (itemName: string, itemType: ItemType) => {
+    if (itemType === "ARMOR") {
+      return character?.equippedArmorName === itemName;
+    }
+    if (itemType === "WEAPON") {
+      return (
+        character?.equippedPrimaryWeapon === itemName ||
+        character?.equippedSecondaryWeapon === itemName
+      );
+    }
+    return false;
+  };
+
+  const canEquipWeapon = (itemName: string) => {
+    const weaponDetails = Weapons.find((w) => w.name === itemName);
+    if (!weaponDetails) return false;
+
+    const isOneHanded = weaponDetails.burden === "One-Handed";
+    const isTwoHanded = weaponDetails.burden === "Two-Handed";
+    const isPrimary = weaponDetails.primary_or_secondary === "Primary";
+    const isSecondary = weaponDetails.primary_or_secondary === "Secondary";
+
+    if (isTwoHanded) {
+      // Two-handed weapons can always be equipped (will clear both slots)
+      return true;
+    } else if (isOneHanded && isPrimary) {
+      // One-handed primary can always be equipped
+      return true;
+    } else if (isOneHanded && isSecondary) {
+      // One-handed secondary can only be equipped if no two-handed weapon in primary
+      if (character?.equippedPrimaryWeapon) {
+        const currentPrimary = Weapons.find(
+          (w) => w.name === character.equippedPrimaryWeapon,
+        );
+        return currentPrimary?.burden !== "Two-Handed";
+      }
+      return true;
+    }
+    return false;
   };
 
   const renderItemDetails = (
@@ -446,6 +548,66 @@ export default function CharacterInventoryClient({
                                 </>
                               ) : (
                                 <>
+                                  {(item.itemType === "ARMOR" ||
+                                    item.itemType === "WEAPON") && (
+                                    <Button
+                                      onClick={() =>
+                                        isItemEquipped(
+                                          item.itemName,
+                                          item.itemType,
+                                        )
+                                          ? handleUnequipItem(
+                                              item.itemName,
+                                              item.itemType,
+                                            )
+                                          : handleEquipItem(
+                                              item.itemName,
+                                              item.itemType,
+                                            )
+                                      }
+                                      disabled={
+                                        equipMutation.isPending ||
+                                        unequipMutation.isPending ||
+                                        (item.itemType === "WEAPON" &&
+                                          !canEquipWeapon(item.itemName))
+                                      }
+                                      size="sm"
+                                      variant="outline"
+                                      className={`h-6 w-6 p-0 ${
+                                        isItemEquipped(
+                                          item.itemName,
+                                          item.itemType,
+                                        )
+                                          ? "border-yellow-500 bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
+                                          : item.itemType === "WEAPON" &&
+                                              !canEquipWeapon(item.itemName)
+                                            ? "cursor-not-allowed border-slate-500 bg-slate-500/20 text-slate-500"
+                                            : "border-sky-500 bg-sky-500/20 text-sky-400 hover:bg-sky-500/30"
+                                      }`}
+                                      title={
+                                        isItemEquipped(
+                                          item.itemName,
+                                          item.itemType,
+                                        )
+                                          ? "Unequip"
+                                          : item.itemType === "WEAPON" &&
+                                              !canEquipWeapon(item.itemName)
+                                            ? "Cannot equip: conflicting weapon equipped"
+                                            : "Equip"
+                                      }
+                                    >
+                                      {isItemEquipped(
+                                        item.itemName,
+                                        item.itemType,
+                                      ) ? (
+                                        <Shield className="h-3 w-3" />
+                                      ) : item.itemType === "ARMOR" ? (
+                                        <Shield className="h-3 w-3" />
+                                      ) : (
+                                        <Sword className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  )}
                                   <Button
                                     onClick={() =>
                                       handleQuantityEdit(item.id, item.quantity)

@@ -115,6 +115,11 @@ model Character {
     evasion Int @default(0)
     armor   Int @default(0)
 
+    // Equipped items
+    equippedArmorName       String? // Name of equipped armor from SRD
+    equippedPrimaryWeapon   String? // Name of equipped primary weapon from SRD
+    equippedSecondaryWeapon String? // Name of equipped secondary weapon from SRD
+
     // Gold/wealth tracking
     goldHandfuls Int     @default(0)
     goldBags     Int     @default(0)

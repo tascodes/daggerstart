@@ -5,6 +5,7 @@ import CharacterExperiences from "~/components/CharacterExperiences";
 import CharacterTraits from "~/components/CharacterTraits";
 import HealthSection from "~/components/HealthSection";
 import DefenseSection from "~/components/DefenseSection";
+import EquippedWeaponSection from "~/components/EquippedWeaponSection";
 import ClassFeatures from "~/components/ClassFeatures";
 import FearBar from "~/components/FearBar";
 import FloatingHopePanel from "~/components/FloatingHopePanel";
@@ -133,6 +134,14 @@ export default function CharacterDetailClient({
             onUpdate={() => void refetch()}
           />
         </div>
+
+        {/* Equipped Weapon Section */}
+        {(character.equippedPrimaryWeapon ||
+          character.equippedSecondaryWeapon) && (
+          <div className="mb-8">
+            <EquippedWeaponSection character={character} />
+          </div>
+        )}
 
         {/* Fear Section - Show GM's Fear if character is in a game */}
         {character.gameId && (

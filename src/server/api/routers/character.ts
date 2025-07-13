@@ -4,6 +4,7 @@ import { LevelChoice, ItemType } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { classes } from "~/lib/srd/classes";
 import { Abilities } from "~/lib/srd/abilities";
+import { Weapons } from "~/lib/srd/weapons";
 import { type PrismaClient } from "@prisma/client";
 
 async function calculateMaxHp(
@@ -29,6 +30,19 @@ async function calculateMaxHp(
   });
 
   return baseHp + hitPointChoices;
+}
+
+// Helper function to calculate character proficiency
+function calculateProficiency(
+  characterLevels: Array<{ choices: Array<{ choice: string }> }>,
+): number {
+  const proficiencyChoices = characterLevels.reduce((count, level) => {
+    return (
+      count +
+      level.choices.filter((choice) => choice.choice === "PROFICIENCY").length
+    );
+  }, 0);
+  return 1 + proficiencyChoices;
 }
 
 const createCharacterSchema = z.object({
@@ -104,6 +118,19 @@ const updateInventoryItemSchema = z.object({
 
 const deleteInventoryItemSchema = z.object({
   id: z.string(),
+});
+
+const equipItemSchema = z.object({
+  characterId: z.string(),
+  itemName: z.string(),
+  itemType: z.enum(["ARMOR", "WEAPON"]),
+  weaponSlot: z.enum(["PRIMARY", "SECONDARY"]).optional(),
+});
+
+const unequipItemSchema = z.object({
+  characterId: z.string(),
+  itemType: z.enum(["ARMOR", "WEAPON"]),
+  weaponSlot: z.enum(["PRIMARY", "SECONDARY"]).optional(),
 });
 
 const updateDamageThresholdSchema = z.object({
@@ -487,13 +514,24 @@ export const characterRouter = createTRPCRouter({
     }),
 
   getByUserId: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.character.findMany({
+    const characters = await ctx.db.character.findMany({
       where: { userId: ctx.session.user.id },
       include: {
         experiences: true,
+        CharacterLevel: {
+          include: {
+            choices: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    // Add proficiency calculation to each character
+    return characters.map((character) => ({
+      ...character,
+      proficiency: calculateProficiency(character.CharacterLevel),
+    }));
   }),
 
   getById: protectedProcedure
@@ -509,6 +547,11 @@ export const characterRouter = createTRPCRouter({
             select: { id: true, name: true },
           },
           experiences: true,
+          CharacterLevel: {
+            include: {
+              choices: true,
+            },
+          },
         },
       });
 
@@ -534,7 +577,11 @@ export const characterRouter = createTRPCRouter({
         throw new Error("You don't have permission to view this character");
       }
 
-      return character;
+      // Calculate proficiency: 1 + number of PROFICIENCY choices
+      return {
+        ...character,
+        proficiency: calculateProficiency(character.CharacterLevel),
+      };
     }),
 
   updateAbilities: protectedProcedure
@@ -1587,6 +1634,137 @@ export const characterRouter = createTRPCRouter({
             maxHp: baseHp, // Reset to base class HP
           },
         });
+      });
+    }),
+
+  equipItem: protectedProcedure
+    .input(equipItemSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: {
+          userId: true,
+          equippedPrimaryWeapon: true,
+          equippedSecondaryWeapon: true,
+        },
+      });
+
+      if (!character || character.userId !== ctx.session.user.id) {
+        throw new Error("Character not found or not owned by you");
+      }
+
+      // Verify the item is in the character's inventory
+      const inventoryItem = await ctx.db.inventoryItem.findFirst({
+        where: {
+          characterId: input.characterId,
+          itemName: input.itemName,
+          itemType: input.itemType,
+        },
+      });
+
+      if (!inventoryItem) {
+        throw new Error("Item not found in inventory");
+      }
+
+      // Update the character with the equipped item
+      const updateData: {
+        equippedArmorName?: string;
+        equippedPrimaryWeapon?: string | null;
+        equippedSecondaryWeapon?: string | null;
+      } = {};
+
+      if (input.itemType === "ARMOR") {
+        updateData.equippedArmorName = input.itemName;
+      } else if (input.itemType === "WEAPON") {
+        // Find weapon details to check if it's one-handed or two-handed
+        const weaponDetails = Weapons.find((w) => w.name === input.itemName);
+        if (!weaponDetails) {
+          throw new Error("Weapon not found in SRD");
+        }
+
+        const isOneHanded = weaponDetails.burden === "One-Handed";
+        const isTwoHanded = weaponDetails.burden === "Two-Handed";
+        const isPrimary = weaponDetails.primary_or_secondary === "Primary";
+        const isSecondary = weaponDetails.primary_or_secondary === "Secondary";
+
+        if (isTwoHanded) {
+          // Two-handed weapon: clear both slots and equip in primary
+          updateData.equippedPrimaryWeapon = input.itemName;
+          updateData.equippedSecondaryWeapon = null;
+        } else if (isOneHanded && isPrimary) {
+          // One-handed primary: equip in primary slot
+          updateData.equippedPrimaryWeapon = input.itemName;
+          // If there was a two-handed weapon, clear secondary slot
+          if (character.equippedPrimaryWeapon) {
+            const currentPrimary = Weapons.find(
+              (w) => w.name === character.equippedPrimaryWeapon,
+            );
+            if (currentPrimary?.burden === "Two-Handed") {
+              updateData.equippedSecondaryWeapon = null;
+            }
+          }
+        } else if (isOneHanded && isSecondary) {
+          // One-handed secondary: check if primary slot allows it
+          if (character.equippedPrimaryWeapon) {
+            const currentPrimary = Weapons.find(
+              (w) => w.name === character.equippedPrimaryWeapon,
+            );
+            if (currentPrimary?.burden === "Two-Handed") {
+              throw new Error(
+                "Cannot equip secondary weapon while two-handed weapon is equipped",
+              );
+            }
+          }
+          updateData.equippedSecondaryWeapon = input.itemName;
+        } else {
+          throw new Error("Invalid weapon type");
+        }
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.characterId },
+        data: updateData,
+      });
+    }),
+
+  unequipItem: protectedProcedure
+    .input(unequipItemSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: { userId: true },
+      });
+
+      if (!character || character.userId !== ctx.session.user.id) {
+        throw new Error("Character not found or not owned by you");
+      }
+
+      // Update the character to unequip the item
+      const updateData: {
+        equippedArmorName?: null;
+        equippedPrimaryWeapon?: null;
+        equippedSecondaryWeapon?: null;
+      } = {};
+
+      if (input.itemType === "ARMOR") {
+        updateData.equippedArmorName = null;
+      } else if (input.itemType === "WEAPON") {
+        if (input.weaponSlot === "PRIMARY") {
+          updateData.equippedPrimaryWeapon = null;
+        } else if (input.weaponSlot === "SECONDARY") {
+          updateData.equippedSecondaryWeapon = null;
+        } else {
+          // If no slot specified, clear both (for backward compatibility)
+          updateData.equippedPrimaryWeapon = null;
+          updateData.equippedSecondaryWeapon = null;
+        }
+      }
+
+      return ctx.db.character.update({
+        where: { id: input.characterId },
+        data: updateData,
       });
     }),
 });
