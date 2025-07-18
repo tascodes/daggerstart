@@ -76,6 +76,7 @@ const CardSection = ({
             text={ability.text}
             level={ability.level}
             domain={ability.domain}
+            recall={ability.recall}
             tokens={0}
             isSelected={isSelected}
             isOwner={isOwner}

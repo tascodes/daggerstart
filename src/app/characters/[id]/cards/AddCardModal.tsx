@@ -221,6 +221,7 @@ export default function AddCardModal({
                         text={ability.text}
                         level={ability.level}
                         domain={ability.domain}
+                        recall={ability.recall}
                         tokens={0}
                         isSelected={false}
                         isOwner={true}
