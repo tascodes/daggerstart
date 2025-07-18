@@ -776,7 +776,7 @@ export const Abilities: Ability[] = [
     type: "Spell",
     recall: "2",
     text: "Mark an adversary within Close range with a sigil of retribution. The GM gains a Fear. When the marked adversary deals damage to you or your allies, place a d8 on this card. You can hold a number of d8s equal to your level. When you successfully attack the marked adversary, roll the dice on this card and add the total to your damage roll, then clear the dice. This effect ends when the marked adversary is defeated or you cast Sigil of Retribution again.",
-    holdsTokens: false,
+    holdsTokens: true,
     limitedUse: false,
   },
   {
@@ -1426,7 +1426,7 @@ export const Abilities: Ability[] = [
     type: "Spell",
     recall: "2",
     text: "Once per long rest, mark a Stress to channel the natural world around you and enhance yourself. Describe how your appearance changes, then place a d6 on this card with the 1 value facing up.\n\nWhile the Wild Surge Die is active, you add its value to every action roll you make. After you add its value to a roll, increase the Wild Surge Die’s value by one. When the die’s value would exceed 6 or you take a rest, this form drops and you must mark an additional Stress.",
-    holdsTokens: false,
+    holdsTokens: true,
     limitedUse: true,
   },
   {
@@ -1616,7 +1616,7 @@ export const Abilities: Ability[] = [
     type: "Spell",
     recall: "2",
     text: "Make a Spellcast Roll (16). Once per long rest on a success, choose a point within Far range and create a visible zone of protection there for all allies within Very Close range of that point. When you do, place a d6 on this card with the 1 value facing up. When an ally in this zone takes damage, they reduce it by the die’s value. You then increase the die’s value by one. When the die’s value would exceed 6, this effect ends.",
-    holdsTokens: false,
+    holdsTokens: true,
     limitedUse: true,
   },
   {
