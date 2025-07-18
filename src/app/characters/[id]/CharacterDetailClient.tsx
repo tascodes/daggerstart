@@ -11,6 +11,7 @@ import FearBar from "@/components/FearBar";
 import FloatingHopePanel from "@/components/FloatingHopePanel";
 import FloatingFearPanel from "@/components/FloatingFearPanel";
 import { api } from "@/trpc/react";
+import { SimpleEditor } from "@/components/tiptap-templates/simple/simple-editor";
 
 interface CharacterDetailClientProps {
   characterId: string;
@@ -187,6 +188,14 @@ export default function CharacterDetailClient({
         {/* Class Features Section */}
         <div className="mt-8">
           <ClassFeatures character={character} />
+        </div>
+
+        {/* Notes Section with TipTap Editor */}
+        <div className="mt-8">
+          <div className="rounded-lg border border-slate-700 p-6 shadow-lg">
+            <h2 className="mb-4 text-xl font-bold text-white">Notes</h2>
+            <SimpleEditor />
+          </div>
         </div>
       </div>
 

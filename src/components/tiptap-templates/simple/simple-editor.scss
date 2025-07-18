@@ -1,0 +1,71 @@
+.tiptap.ProseMirror {
+  font-family: "Archivo", sans-serif;
+}
+
+.content-wrapper {
+  height: calc(100% - var(--tt-toolbar-height));
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    display: block;
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--tt-scrollbar-color);
+    border-radius: 4px;
+  }
+
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--tt-scrollbar-color) transparent;
+}
+
+.simple-editor-content {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.simple-editor-content .tiptap.ProseMirror {
+  padding: 3rem 3rem;
+  background-color: rgb(15 23 42); /* slate-950 equivalent */
+  border-radius: 0.5rem;
+  border: 1px solid rgb(51 65 85); /* slate-600 equivalent */
+  color: white;
+  min-height: 300px;
+  
+  /* Placeholder styling for dark background */
+  .tiptap.ProseMirror p.is-editor-empty:first-child::before {
+    color: rgb(148 163 184); /* slate-400 equivalent */
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .simple-editor-content .tiptap.ProseMirror {
+    padding: 1rem 1.5rem;
+    background-color: rgb(15 23 42); /* slate-950 equivalent */
+    border-radius: 0.5rem;
+    border: 1px solid rgb(51 65 85); /* slate-600 equivalent */
+    color: white;
+    min-height: 300px;
+  }
+}
+
+/* Override button active states for better visibility in dark theme */
+.tiptap-button[data-active-state="on"] {
+  background-color: rgb(14 165 233) !important; /* sky-500 */
+  color: white !important;
+  
+  .tiptap-button-icon {
+    color: white !important;
+  }
+  
+  &:hover {
+    background-color: rgb(2 132 199) !important; /* sky-600 */
+  }
+}

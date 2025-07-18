@@ -30,7 +30,10 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en" className={`${archivo.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${archivo.variable} ${geistMono.variable} dark`}
+    >
       <body className="bg-slate-900 font-sans text-white">
         <TRPCReactProvider>
           <SessionProvider session={session}>
