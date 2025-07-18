@@ -227,6 +227,7 @@ export default function AddCardModal({
                         isOwner={true}
                         characterLevel={characterLevel}
                         canSelect={canSelectCard(ability)}
+                        holdsTokens={ability.holdsTokens}
                       />
                       {canSelectCard(ability) && (
                         <Button

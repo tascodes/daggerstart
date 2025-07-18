@@ -47,6 +47,9 @@ interface CardSectionProps {
   emptyMessage?: string;
   location?: "available" | "loadout" | "vault";
   isLoadoutFull?: boolean;
+  selectedCards?: Array<{ cardName: string; tokens: number; inLoadout: boolean }>;
+  onAddToken?: (cardName: string, currentTokens: number) => void;
+  onRemoveToken?: (cardName: string, currentTokens: number) => void;
 }
 
 const CardSection = ({
@@ -62,6 +65,9 @@ const CardSection = ({
   emptyMessage,
   location = "available",
   isLoadoutFull = false,
+  selectedCards = [],
+  onAddToken,
+  onRemoveToken,
 }: CardSectionProps) => (
   <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 shadow-lg">
     <h2 className="mb-6 text-2xl font-bold text-white">{title}</h2>
@@ -69,33 +75,39 @@ const CardSection = ({
       <p className="text-center text-slate-400">{emptyMessage}</p>
     ) : (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {abilities.map((ability: Ability, index: number) => (
-          <AbilityCard
-            key={`${ability.name}-${index}`}
-            name={ability.name}
-            text={ability.text}
-            level={ability.level}
-            domain={ability.domain}
-            recall={ability.recall}
-            tokens={0}
-            isSelected={isSelected}
-            isOwner={isOwner}
-            characterLevel={characterLevel}
-            onSelect={isSelected ? undefined : () => onCardAction?.(ability.name)}
-            onDeselect={
-              isSelected ? () => onCardAction?.(ability.name) : undefined
-            }
-            onMoveToVault={
-              location === "loadout" ? () => onMoveToVault?.(ability.name) : undefined
-            }
-            onMoveToLoadout={
-              location === "vault" ? () => onMoveToLoadout?.(ability.name) : undefined
-            }
-            canSelect={isSelected ? true : canSelectCard(ability)}
-            location={location}
-            isLoadoutFull={isLoadoutFull}
-          />
-        ))}
+        {abilities.map((ability: Ability, index: number) => {
+          const cardTokens = selectedCards.find(card => card.cardName === ability.name)?.tokens ?? 0;
+          return (
+            <AbilityCard
+              key={`${ability.name}-${index}`}
+              name={ability.name}
+              text={ability.text}
+              level={ability.level}
+              domain={ability.domain}
+              recall={ability.recall}
+              tokens={cardTokens}
+              isSelected={isSelected}
+              isOwner={isOwner}
+              characterLevel={characterLevel}
+              onSelect={isSelected ? undefined : () => onCardAction?.(ability.name)}
+              onDeselect={
+                isSelected ? () => onCardAction?.(ability.name) : undefined
+              }
+              onMoveToVault={
+                location === "loadout" ? () => onMoveToVault?.(ability.name) : undefined
+              }
+              onMoveToLoadout={
+                location === "vault" ? () => onMoveToLoadout?.(ability.name) : undefined
+              }
+              canSelect={isSelected ? true : canSelectCard(ability)}
+              location={location}
+              isLoadoutFull={isLoadoutFull}
+              holdsTokens={ability.holdsTokens}
+              onAddToken={() => onAddToken?.(ability.name, cardTokens)}
+              onRemoveToken={() => onRemoveToken?.(ability.name, cardTokens)}
+            />
+          );
+        })}
       </div>
     )}
   </div>
@@ -150,6 +162,54 @@ export default function CharacterCardsClient({
     },
     onError: (error) => {
       console.error("Failed to move card to loadout:", error);
+    },
+  });
+
+  const updateCardTokensMutation = api.character.updateCardTokens.useMutation({
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await utils.character.getSelectedCards.cancel({ id: characterId });
+
+      // Snapshot the previous value
+      const previousData = utils.character.getSelectedCards.getData({ id: characterId });
+
+      // Optimistically update the cache
+      utils.character.getSelectedCards.setData({ id: characterId }, (old) => {
+        if (!old) return old;
+        
+        return {
+          ...old,
+          loadoutCards: old.loadoutCards?.map(card => 
+            card.cardName === newData.cardName 
+              ? { ...card, tokens: newData.tokens }
+              : card
+          ),
+          vaultCards: old.vaultCards?.map(card => 
+            card.cardName === newData.cardName 
+              ? { ...card, tokens: newData.tokens }
+              : card
+          ),
+          selectedCards: old.selectedCards?.map(card => 
+            card.cardName === newData.cardName 
+              ? { ...card, tokens: newData.tokens }
+              : card
+          ),
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousData };
+    },
+    onError: (err, newData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousData) {
+        utils.character.getSelectedCards.setData({ id: characterId }, context.previousData);
+      }
+      console.error("Failed to update card tokens:", err);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure we have the latest data
+      void utils.character.getSelectedCards.invalidate({ id: characterId });
     },
   });
 
@@ -226,6 +286,26 @@ export default function CharacterCardsClient({
 
   const handleMoveToLoadout = (cardName: string) => {
     moveToLoadoutMutation.mutate({ characterId, cardName });
+  };
+
+  const handleAddToken = (cardName: string, currentTokens: number) => {
+    if (currentTokens < 8) {
+      updateCardTokensMutation.mutate({
+        characterId,
+        cardName,
+        tokens: currentTokens + 1,
+      });
+    }
+  };
+
+  const handleRemoveToken = (cardName: string, currentTokens: number) => {
+    if (currentTokens > 0) {
+      updateCardTokensMutation.mutate({
+        characterId,
+        cardName,
+        tokens: currentTokens - 1,
+      });
+    }
   };
 
   // Check if a specific card can be selected based on level validation
@@ -324,6 +404,9 @@ export default function CharacterCardsClient({
         canSelectCard={canSelectCard}
         location="loadout"
         emptyMessage="No cards in loadout. Add cards from your available cards below."
+        selectedCards={cardData?.loadoutCards}
+        onAddToken={handleAddToken}
+        onRemoveToken={handleRemoveToken}
       />
 
       {/* Vault Section */}
@@ -339,6 +422,9 @@ export default function CharacterCardsClient({
           canSelectCard={canSelectCard}
           location="vault"
           isLoadoutFull={isLoadoutFull}
+          selectedCards={cardData?.vaultCards}
+          onAddToken={handleAddToken}
+          onRemoveToken={handleRemoveToken}
         />
       )}
 

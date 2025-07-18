@@ -286,6 +286,7 @@ model SelectedCard {
     id          String    @id @default(cuid())
     cardName    String    // Name of the ability/card
     inLoadout   Boolean   @default(true) // true = in loadout, false = in vault
+    tokens      Int       @default(0) // Number of tokens on card (0-8)
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
 

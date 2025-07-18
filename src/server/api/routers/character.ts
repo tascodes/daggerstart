@@ -1893,4 +1893,57 @@ export const characterRouter = createTRPCRouter({
         data: updateData,
       });
     }),
+
+  updateCardTokens: protectedProcedure
+    .input(
+      z.object({
+        characterId: z.string(),
+        cardName: z.string(),
+        tokens: z.number().min(0).max(8),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: { userId: true },
+      });
+
+      if (!character || character.userId !== ctx.session.user.id) {
+        throw new Error("Character not found or not owned by you");
+      }
+
+      // Verify the card exists and belongs to the character
+      const selectedCard = await ctx.db.selectedCard.findUnique({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+      });
+
+      if (!selectedCard) {
+        throw new Error("Card not found in character's selection");
+      }
+
+      // Check if the ability holds tokens
+      const ability = Abilities.find(a => a.name === input.cardName);
+      if (!ability?.holdsTokens) {
+        throw new Error("This card does not hold tokens");
+      }
+
+      // Update the tokens
+      return ctx.db.selectedCard.update({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+        data: {
+          tokens: input.tokens,
+        },
+      });
+    }),
 });
