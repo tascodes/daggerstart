@@ -39,10 +39,14 @@ interface CardSectionProps {
   abilities: Ability[];
   isOwner: boolean;
   characterLevel: number;
-  onCardAction: (cardName: string) => void;
+  onCardAction?: (cardName: string) => void;
+  onMoveToVault?: (cardName: string) => void;
+  onMoveToLoadout?: (cardName: string) => void;
   isSelected: boolean;
   canSelectCard: (ability: Ability) => boolean;
   emptyMessage?: string;
+  location?: "available" | "loadout" | "vault";
+  isLoadoutFull?: boolean;
 }
 
 const CardSection = ({
@@ -51,16 +55,20 @@ const CardSection = ({
   isOwner,
   characterLevel,
   onCardAction,
+  onMoveToVault,
+  onMoveToLoadout,
   isSelected,
   canSelectCard,
   emptyMessage,
+  location = "available",
+  isLoadoutFull = false,
 }: CardSectionProps) => (
   <div className="rounded-lg border border-slate-700 bg-slate-800 p-8 shadow-lg">
     <h2 className="mb-6 text-2xl font-bold text-white">{title}</h2>
     {abilities.length === 0 && emptyMessage ? (
       <p className="text-center text-slate-400">{emptyMessage}</p>
     ) : (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {abilities.map((ability: Ability, index: number) => (
           <AbilityCard
             key={`${ability.name}-${index}`}
@@ -72,11 +80,19 @@ const CardSection = ({
             isSelected={isSelected}
             isOwner={isOwner}
             characterLevel={characterLevel}
-            onSelect={isSelected ? undefined : () => onCardAction(ability.name)}
+            onSelect={isSelected ? undefined : () => onCardAction?.(ability.name)}
             onDeselect={
-              isSelected ? () => onCardAction(ability.name) : undefined
+              isSelected ? () => onCardAction?.(ability.name) : undefined
+            }
+            onMoveToVault={
+              location === "loadout" ? () => onMoveToVault?.(ability.name) : undefined
+            }
+            onMoveToLoadout={
+              location === "vault" ? () => onMoveToLoadout?.(ability.name) : undefined
             }
             canSelect={isSelected ? true : canSelectCard(ability)}
+            location={location}
+            isLoadoutFull={isLoadoutFull}
           />
         ))}
       </div>
@@ -118,10 +134,28 @@ export default function CharacterCardsClient({
     },
   });
 
-  // Get character's available abilities and separate selected/available
-  const { selectedAbilities, availableAbilities } = useMemo(() => {
-    if (!character?.class) {
-      return { selectedAbilities: [], availableAbilities: [] };
+  const moveToVaultMutation = api.character.moveCardToVault.useMutation({
+    onSuccess: () => {
+      void utils.character.getSelectedCards.invalidate({ id: characterId });
+    },
+    onError: (error) => {
+      console.error("Failed to move card to vault:", error);
+    },
+  });
+
+  const moveToLoadoutMutation = api.character.moveCardToLoadout.useMutation({
+    onSuccess: () => {
+      void utils.character.getSelectedCards.invalidate({ id: characterId });
+    },
+    onError: (error) => {
+      console.error("Failed to move card to loadout:", error);
+    },
+  });
+
+  // Get character's available abilities and separate loadout/vault/available
+  const { loadoutAbilities, vaultAbilities, availableAbilities } = useMemo(() => {
+    if (!character?.class || !cardData) {
+      return { loadoutAbilities: [], vaultAbilities: [], availableAbilities: [] };
     }
 
     const classData = classes.find(
@@ -129,12 +163,16 @@ export default function CharacterCardsClient({
     );
 
     if (!classData) {
-      return { selectedAbilities: [], availableAbilities: [] };
+      return { loadoutAbilities: [], vaultAbilities: [], availableAbilities: [] };
     }
 
     const domains = [classData.domain_1, classData.domain_2];
     const selectedCardNames =
-      cardData?.selectedCards?.map((card) => card.cardName) ?? [];
+      cardData.selectedCards?.map((card) => card.cardName) ?? [];
+    const loadoutCardNames =
+      cardData.loadoutCards?.map((card) => card.cardName) ?? [];
+    const vaultCardNames =
+      cardData.vaultCards?.map((card) => card.cardName) ?? [];
 
     const abilities = Abilities.filter((ability: Ability) => {
       const abilityLevel = parseInt(ability.level);
@@ -153,8 +191,12 @@ export default function CharacterCardsClient({
       return a.domain.localeCompare(b.domain);
     });
 
-    const selected = abilities.filter((ability) =>
-      selectedCardNames.includes(ability.name),
+    const loadout = abilities.filter((ability) =>
+      loadoutCardNames.includes(ability.name),
+    );
+
+    const vault = abilities.filter((ability) =>
+      vaultCardNames.includes(ability.name),
     );
 
     const available = abilities.filter(
@@ -162,10 +204,11 @@ export default function CharacterCardsClient({
     );
 
     return {
-      selectedAbilities: selected,
+      loadoutAbilities: loadout,
+      vaultAbilities: vault,
       availableAbilities: available,
     };
-  }, [character?.class, character?.level, cardData?.selectedCards]);
+  }, [character?.class, character?.level, cardData]);
 
   // Card interaction handlers
   const handleSelectCard = (cardName: string) => {
@@ -174,6 +217,14 @@ export default function CharacterCardsClient({
 
   const handleDeselectCard = (cardName: string) => {
     deselectCardMutation.mutate({ characterId, cardName });
+  };
+
+  const handleMoveToVault = (cardName: string) => {
+    moveToVaultMutation.mutate({ characterId, cardName });
+  };
+
+  const handleMoveToLoadout = (cardName: string) => {
+    moveToLoadoutMutation.mutate({ characterId, cardName });
   };
 
   // Check if a specific card can be selected based on level validation
@@ -186,6 +237,8 @@ export default function CharacterCardsClient({
     const levelInfo = cardData.actualSlotsByLevel[cardLevel];
     return levelInfo?.canSelectThisLevel ?? false;
   };
+
+  const isLoadoutFull = loadoutAbilities.length >= 5;
 
   if (!character) {
     return null; // Layout will handle the not found case
@@ -200,7 +253,10 @@ export default function CharacterCardsClient({
             <div className="flex items-center gap-4">
               <h3 className="text-lg font-semibold text-white">Card Slots</h3>
               <Badge variant="secondary" className="bg-sky-500 text-white">
-                {cardData.usedSlots} / {cardData.availableSlots} Selected
+                {cardData.usedSlots} / {cardData.availableSlots} Total Selected
+              </Badge>
+              <Badge variant="secondary" className="bg-purple-600 text-white">
+                {cardData.loadoutCards?.length ?? 0} / 5 in Loadout
               </Badge>
             </div>
             {cardData.usedSlots >= cardData.availableSlots && isOwner && (
@@ -255,16 +311,33 @@ export default function CharacterCardsClient({
         </div>
       )}
 
-      {/* Selected Cards Section */}
-      {selectedAbilities.length > 0 && (
+      {/* Loadout Section */}
+      <CardSection
+        title={`Loadout (${loadoutAbilities.length}/5)`}
+        abilities={loadoutAbilities}
+        isOwner={isOwner}
+        characterLevel={character.level}
+        onCardAction={handleDeselectCard}
+        onMoveToVault={handleMoveToVault}
+        isSelected={true}
+        canSelectCard={canSelectCard}
+        location="loadout"
+        emptyMessage="No cards in loadout. Add cards from your available cards below."
+      />
+
+      {/* Vault Section */}
+      {vaultAbilities.length > 0 && (
         <CardSection
-          title={`Selected Cards (${selectedAbilities.length})`}
-          abilities={selectedAbilities}
+          title={`Vault (${vaultAbilities.length})`}
+          abilities={vaultAbilities}
           isOwner={isOwner}
           characterLevel={character.level}
           onCardAction={handleDeselectCard}
+          onMoveToLoadout={handleMoveToLoadout}
           isSelected={true}
           canSelectCard={canSelectCard}
+          location="vault"
+          isLoadoutFull={isLoadoutFull}
         />
       )}
 

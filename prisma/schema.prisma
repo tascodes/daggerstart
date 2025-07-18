@@ -285,6 +285,7 @@ model CharacterLevelExperienceIncrease {
 model SelectedCard {
     id          String    @id @default(cuid())
     cardName    String    // Name of the ability/card
+    inLoadout   Boolean   @default(true) // true = in loadout, false = in vault
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
 
@@ -293,6 +294,7 @@ model SelectedCard {
 
     @@unique([characterId, cardName])
     @@index([characterId])
+    @@index([characterId, inLoadout])
 }
 
 model Experience {

@@ -208,6 +208,16 @@ const deselectCardSchema = z.object({
   cardName: z.string(),
 });
 
+const moveCardToVaultSchema = z.object({
+  characterId: z.string(),
+  cardName: z.string(),
+});
+
+const moveCardToLoadoutSchema = z.object({
+  characterId: z.string(),
+  cardName: z.string(),
+});
+
 // Helper function to calculate base slots by level
 const calculateBaseSlotsByLevel = (
   characterLevel: number,
@@ -1284,7 +1294,7 @@ export const characterRouter = createTRPCRouter({
 
       const cardLevel = parseInt(ability.level);
 
-      // Check if we can select this card
+      // Check if we can select this card (based on all selected cards)
       const canSelect = canSelectCardOfLevel(
         cardLevel,
         character.level,
@@ -1359,6 +1369,116 @@ export const characterRouter = createTRPCRouter({
       });
     }),
 
+  moveCardToVault: protectedProcedure
+    .input(moveCardToVaultSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        select: { userId: true },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only move cards for your own characters");
+      }
+
+      const card = await ctx.db.selectedCard.findUnique({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+      });
+
+      if (!card) {
+        throw new Error("Card not found");
+      }
+
+      if (!card.inLoadout) {
+        throw new Error("Card is already in vault");
+      }
+
+      return ctx.db.selectedCard.update({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+        data: {
+          inLoadout: false,
+        },
+      });
+    }),
+
+  moveCardToLoadout: protectedProcedure
+    .input(moveCardToLoadoutSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify the character belongs to the user
+      const character = await ctx.db.character.findUnique({
+        where: { id: input.characterId },
+        include: {
+          selectedCards: true,
+          CharacterLevel: {
+            include: {
+              choices: true,
+            },
+          },
+        },
+      });
+
+      if (!character) {
+        throw new Error("Character not found");
+      }
+
+      if (character.userId !== ctx.session.user.id) {
+        throw new Error("You can only move cards for your own characters");
+      }
+
+      const card = await ctx.db.selectedCard.findUnique({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+      });
+
+      if (!card) {
+        throw new Error("Card not found");
+      }
+
+      if (card.inLoadout) {
+        throw new Error("Card is already in loadout");
+      }
+
+      // Check if moving to loadout would exceed the 5 card limit
+      const loadoutCards = character.selectedCards.filter(c => c.inLoadout);
+      if (loadoutCards.length >= 5) {
+        throw new Error("Cannot have more than 5 cards in loadout");
+      }
+
+      // No need to validate slots when moving from vault to loadout
+      // The card is already selected and using a slot
+
+      return ctx.db.selectedCard.update({
+        where: {
+          characterId_cardName: {
+            characterId: input.characterId,
+            cardName: input.cardName,
+          },
+        },
+        data: {
+          inLoadout: true,
+        },
+      });
+    }),
+
   getSelectedCards: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -1396,19 +1516,23 @@ export const characterRouter = createTRPCRouter({
         throw new Error("You don't have permission to view this character");
       }
 
-      // Calculate available slots by level (for card selection validation)
+      // Separate cards into loadout and vault
+      const loadoutCards = character.selectedCards.filter(card => card.inLoadout);
+      const vaultCards = character.selectedCards.filter(card => !card.inLoadout);
+
+      // Calculate available slots by level (for card selection validation - uses all cards)
       const availableSlotsByLevel = calculateAvailableCardSlotsByLevel(
         character.level,
         character.CharacterLevel,
-        character.selectedCards,
+        character.selectedCards, // Count all selected cards for slot usage
         Abilities,
       );
 
-      // Get actual slots per level (for display)
+      // Get actual slots per level (for display - uses all cards)
       const actualSlotsByLevel = getActualSlotsByLevel(
         character.level,
         character.CharacterLevel,
-        character.selectedCards,
+        character.selectedCards, // Count all selected cards for slot usage
         Abilities,
       );
 
@@ -1421,6 +1545,8 @@ export const characterRouter = createTRPCRouter({
 
       return {
         selectedCards: character.selectedCards,
+        loadoutCards: loadoutCards,
+        vaultCards: vaultCards,
         availableSlots: totalAvailableSlots,
         usedSlots: totalUsedSlots,
         availableSlotsByLevel,
